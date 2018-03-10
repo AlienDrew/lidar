@@ -8,7 +8,7 @@ install:
   - travis_wait 30 sudo apt-get -y install -qq mesa-common-dev qt510-meta-full qt510charts-no-lgpl
 
 script:
-  - source /opt/qt510/bin/qt10-env.sh 
+  - source /opt/qt510/bin/qt510-env.sh 
   - mkdir build
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DWITH_DEBIAN=ON

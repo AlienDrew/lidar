@@ -8,6 +8,9 @@ project(${PROJECT})
 # CMake modules
 include(cmake/RecurseSubdirs.cmake)
 
+# Minimum Qt version
+set(QT_REQUIRED_VERSION 5.9.0)
+
 # Set default output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/result)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/result)
@@ -18,7 +21,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 # Add compiler flags
-add_compile_options(-std=c++11 -Wall -fPIC)
+set(CMAKE_CXX_STANDARD 11)
+add_compile_options(-Wall -fPIC)
 
 # Enable globaly some Qt modules
 find_package(Qt5 COMPONENTS

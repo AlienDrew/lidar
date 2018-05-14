@@ -6,7 +6,9 @@ set(PROJECT lidar)
 project(${PROJECT})
 
 # CMake modules
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake")
 include(cmake/RecurseSubdirs.cmake)
+#include(cmake/FindLibUSB.cmake)
 
 # Minimum Qt version
 set(QT_REQUIRED_VERSION 5.9.0)
@@ -42,6 +44,9 @@ set(QT_LIBRARIES
     Qt5::Charts
 )
 
+#LibUSB
+find_package(LibUSB REQUIRED)
+
 # Sources and headrers
 file(GLOB_RECURSE HEADERS "sources/*.h")
 file(GLOB_RECURSE SOURCES "sources/*.cpp")
@@ -49,6 +54,7 @@ file(GLOB_RECURSE UIs "sources/*.ui")
 #file(GLOB_RECURSE QML "sources/*.qml")
 
 # Includes
+include_directories(${LIBUSB_INCLUDE_DIR})
 HEADER_DIRECTORIES(INCLUDES "sources")
 include_directories(${INCLUDES})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -65,4 +71,4 @@ qt5_wrap_ui(UI_SOURCES ${UIs})
 add_executable(${PROJECT} ${SOURCES} ${HEADERS} ${UIs} ${QRC_SOURCES} ${MOC_SOURCES} ${UI_SOURCES})
 
 # Link Libraries
-target_link_libraries (${PROJECT} ${QT_LIBRARIES})
+target_link_libraries (${PROJECT} ${QT_LIBRARIES} ${LIBUSB_LIBRARY})

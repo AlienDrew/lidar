@@ -17,7 +17,8 @@ namespace utils
 //        };
     public:
         explicit UnitConversion();
-        static qreal frequencyConvert(qreal freq, dto::Channel::Units from, dto::Channel::Units to);
+        static qreal frequencyConvert(qreal freq, dto::Channel::FrequencyUnits from, dto::Channel::FrequencyUnits to);
+        static int voltsToDAC(qreal volts);
     };
 }
 

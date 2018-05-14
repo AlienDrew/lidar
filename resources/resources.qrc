@@ -1,3 +1,12 @@
 <RCC>
-    <qresource prefix="/"/>
+    <qresource prefix="/">
+        <file>icons/zoom_out.png</file>
+        <file>icons/zoom_in.png</file>
+        <file>icons/hand_drag.png</file>
+        <file>icons/reset_zoom.png</file>
+        <file>icons/usb_connected.png</file>
+        <file>icons/usb_disconnected.png</file>
+        <file>icons/usb_disconnected_status.png</file>
+        <file>icons/usb_connected_status.png</file>
+    </qresource>
 </RCC>

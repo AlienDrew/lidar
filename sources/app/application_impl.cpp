@@ -10,13 +10,17 @@
 using namespace core;
 
 
-Application::Impl::Impl(Application* parent, QApplication& app, domain::ServiceRegistry& serviceReg) : QObject(parent)
+Application::Impl::Impl(Application* parent, QApplication& app, domain::ServiceRegistry& serviceReg,
+                        presentation::PresentationManager& presentationMgr) : QObject(parent)
 {
     m_isExternalApp = true;
     m_app = &app;
 
     m_isExternalService = true;
     m_serviceRegistry = &serviceReg;
+
+    m_isExternalPresentationManager = true;
+    m_presentationManager = &presentationMgr;
     this->init(m_app->applicationName());
 }
 
@@ -44,6 +48,17 @@ Application::Impl::Impl(Application* parent, int &argc, char** argv, const QStri
         m_isExternalService = false;
         m_serviceRegistry = new domain::ServiceRegistry();
     }
+
+    if (presentation::PresentationManager::instance())
+    {
+        m_isExternalPresentationManager = true;
+        m_presentationManager = presentation::PresentationManager::instance();
+    }
+    else
+    {
+        m_isExternalPresentationManager = false;
+        m_presentationManager = new presentation::PresentationManager();
+    }
     this->init(appName);
 }
 
@@ -64,10 +79,10 @@ void Application::Impl::exit(int retcode)
 
 Application::Impl::~Impl()
 {
+    if(!m_isExternalPresentationManager && !m_presentationManager.isNull())
+        delete m_presentationManager;
     if (!m_isExternalService && m_serviceRegistry)
         delete m_serviceRegistry;
-    if(!m_presentationManager.isNull())
-        delete m_presentationManager;
     if (m_lock)
         delete m_lock;
 
@@ -84,13 +99,14 @@ void Application::Impl::init(const QString& appName)
     m_lock = new QLockFile("lidar.lock");
     if (!m_lock->tryLock())
         qFatal("%s is locked!", appName.toStdString().c_str());
-    m_presentationManager = new presentation::PresentationManager();
+    //m_presentationManager = new presentation::PresentationManager();
 }
 
 bool Application::Impl::start()
 {
-    if (m_presentationManager.isNull())
-        return false;
-    m_presentationManager->mainWindow()->show();
+//    if (m_presentationManager.isNull())
+//        return false;
+//    m_presentationManager->mainWindow()->show();
+    presentationManager->mainWindow()->show();
     return true;
 }

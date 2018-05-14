@@ -1,36 +1,40 @@
 #include "main_window.h"
 #include "ui_mainwindow.h"
 
-#include "da_converter.h"
 #include "settings_provider.h"
 
 #include "service_registry.h"
 #include "channel.h"
+#include "da_converter_service.h"
 #include "freq_generator_service.h"
+#include "transfer_service.h"
 #include "unit_conversion.h"
+#include "presentation_manager.h"
 
 #include <QDebug>
+#include <QMessageBox>
 
 using namespace presentation;
 
 class MainWindow::Impl
 {
 public:
-    dto::DAConverter* DAC;
-
+    domain::DAConverterService* daConverterService;
     domain::FreqGeneratorService* freqGenService;
-    dto::ChannelPtr genChannel;
+    domain::TransferService* transferService;
+    dto::ChannelPtr channel;
 
     QMap< QString, QAction* > actionMap;
     QList<QComboBox*> chUnits;
-    QList<QDial*> chDials;
+    QList<QPushButton*> chButtons;
     QList<QDoubleSpinBox*> chBoxes;
+    QLabel* statusIcon;
     int chUnitCurrentIndex = 0;
 };
 
 namespace
 {
-    QList<dto::Channel::Units> availableUnits =
+    QList<dto::Channel::FrequencyUnits> availableUnits =
     {
         dto::Channel::Hz, dto::Channel::KHz, dto::Channel::MHz
     };
@@ -41,17 +45,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow), d(new Impl)
 {
     ui->setupUi(this);
+    initToolBar();
     ui->menuFile->setEnabled(false);
     d->actionMap["settings"] = ui->actionSettings;
     d->actionMap["about"] = ui->actionAbout;
 
-    d->chUnits = {ui->ch1Units, ui->ch2Units, ui->ch3Units};
-    d->chDials =  {ui->ch1Dial, ui->ch2Dial, ui->ch3Dial};
-    d->chBoxes = {ui->ch1Box, ui->ch2Box, ui->ch3Box};
+    d->chUnits = {ui->ch1Units, ui->ch2Units};
+    d->chBoxes = {ui->ch1Box, ui->ch2Box};
+    d->chButtons = {ui->setCh1Button, ui->setCh2Button};
 
-    int genChannelAmount = settingsProvider->value(settings::FreqGeneratorSettings::channelCount).toInt();
-    if ((d->chUnits.size() != d->chBoxes.size() || d->chBoxes.size() != d->chDials.size())
-            && d->chBoxes.size() != genChannelAmount)
+    int genChannelAmount = settingsProvider->value(settings::freq_generator::channelCount).toInt();
+    if ((d->chUnits.size() != d->chBoxes.size() || d->chBoxes.size() != d->chButtons.size())
+            || d->chBoxes.size() != genChannelAmount)
         qFatal("amount of generator components must agree");
 
     for(QComboBox* units : d->chUnits)
@@ -61,28 +66,21 @@ MainWindow::MainWindow(QWidget *parent) :
         units->addItem("MHz");
     }
 
+    d->daConverterService = serviceRegistry->daConverterService();
     d->freqGenService = serviceRegistry->freqGeneratorService();
+    d->transferService = serviceRegistry->transferService();
 
-    for (QDoubleSpinBox* chBox : d->chBoxes)
+    d->statusIcon = new QLabel(this);
+    d->statusIcon->setPixmap(QPixmap(":/icons/usb_disconnected_status.png").scaledToHeight(statusBar()->height()/2));
+    d->statusIcon->setToolTip("usb status");
+    statusBar()->insertPermanentWidget(0,d->statusIcon, 0);
+    statusBar()->showMessage("usb device disconnected");
+
+    for (QPushButton* chButton : d->chButtons)
     {
-        connect(chBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [chBox, this](double value)
+        connect(chButton, &QPushButton::clicked, this, [chButton, this] ()
         {
-            updateGenerator(value, d->chBoxes.indexOf(chBox));
-
-            d->chDials.at(d->chBoxes.indexOf(chBox))->blockSignals(true);
-            d->chDials.at(d->chBoxes.indexOf(chBox))->setValue(value);
-            d->chDials.at(d->chBoxes.indexOf(chBox))->blockSignals(false);
-        });
-    }
-    for (QDial* chDial : d->chDials)
-    {
-        connect(chDial, QOverload<int>::of(&QDial::valueChanged), this, [chDial, this](double value)
-        {
-            updateGenerator(value, d->chDials.indexOf(chDial));
-
-            d->chBoxes.at(d->chDials.indexOf(chDial))->blockSignals(true);
-            d->chBoxes.at(d->chDials.indexOf(chDial))->setValue(value);
-            d->chBoxes.at(d->chDials.indexOf(chDial))->blockSignals(false);
+            updateGenerator(d->chButtons.indexOf(chButton), d->chBoxes.at( d->chButtons.indexOf(chButton) )->value());
         });
     }
 
@@ -91,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(chUnit, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [chUnit, this](int index)
         {
             double val = d->chBoxes.at(d->chUnits.indexOf(chUnit))->value();
-            double maxFreq = settingsProvider->value(settings::FreqGeneratorSettings::maxFrequency).toDouble();
+            double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toDouble();
 
             val = utils::UnitConversion::frequencyConvert(val,::availableUnits.at(d->chUnitCurrentIndex), ::availableUnits.at(index));
             maxFreq = utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(index));
@@ -100,28 +98,64 @@ MainWindow::MainWindow(QWidget *parent) :
 
             if (index<tempCurr)
             {
-                d->chDials.at(d->chUnits.indexOf(chUnit))->setMaximum(maxFreq);
                 d->chBoxes.at(d->chUnits.indexOf(chUnit))->setMaximum(maxFreq);
             }
 
             d->chBoxes.at(d->chUnits.indexOf(chUnit))->setValue(val);
-            d->chDials.at(d->chUnits.indexOf(chUnit))->setValue(val);
 
             if (index>tempCurr)
             {
-                d->chDials.at(d->chUnits.indexOf(chUnit))->setMaximum(maxFreq);
                 d->chBoxes.at(d->chUnits.indexOf(chUnit))->setMaximum(maxFreq);
             }
-
-
         });
     }
 
-    //TODO: add DAConverterService
+
+    connect(ui->biasDial, &QDial::valueChanged, this, [this](int value)
+    {
+        ui->biasBox->blockSignals(true);
+        ui->biasBox->setValue(value);
+        ui->biasBox->blockSignals(false);
+    });
+    connect(ui->biasBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](int value)
+    {
+        ui->biasDial->blockSignals(true);
+        ui->biasDial->setValue(value);
+        ui->biasDial->blockSignals(false);
+    });
+    connect(ui->setBiasButton, &QPushButton::clicked, this, [this]()
+    {
+        updateDAC(0, utils::UnitConversion::voltsToDAC(ui->biasBox->value()));
+    });
+
+    connect(ui->setLaserPowButton, &QPushButton::clicked, this, [this]()
+    {
+        updateDAC(1, utils::UnitConversion::voltsToDAC(ui->laserPwrBox->value()));
+    });
+
+    connect(ui->pulseBoostSwitch, &QSlider::sliderPressed, this, [this]()
+    {
+        if (ui->pulseBoostSwitch->value() == 0)
+            ui->pulseBoostSwitch->setValue(1);
+        else if (ui->pulseBoostSwitch->value() == 1)
+            ui->pulseBoostSwitch->setValue(0);
+    });
+
+    connect(d->daConverterService, &domain::DAConverterService::chUpdated, this, [this](dto::ChannelPtr channel)
+    {
+        d->transferService->transferChannel(domain::TransferService::dac, channel);
+    });
+    connect(d->freqGenService, &domain::FreqGeneratorService::chUpdated, this, [this](dto::ChannelPtr channel)
+    {
+        d->transferService->transferChannel(domain::TransferService::gen, channel);
+    });
+
+    connect(ui->measureButton, &QPushButton::clicked, this, &MainWindow::onMeasureClick);
 }
 
 MainWindow::~MainWindow()
 {
+    d->transferService->closeDevice();
     delete ui;
     qDebug()<<"main window destroyed";
 }
@@ -131,13 +165,66 @@ const QMap<QString, QAction*>& MainWindow::actionMap() const
     return d->actionMap;
 }
 
-void MainWindow::updateGenerator(double value, int chId)
+void MainWindow::usbToggle()
+{
+    if (d->transferService->deviceOpened())
+    {
+        d->transferService->closeDevice();
+        ui->mainToolBar->actions().at(0)->setIcon(QIcon(":/icons/usb_disconnected.png"));
+    }
+    else
+    {
+        if (d->transferService->openDevice())
+            ui->mainToolBar->actions().at(0)->setIcon(QIcon(":/icons/usb_connected.png"));
+    }
+    updateStatusBar();
+}
+
+void MainWindow::updateStatusBar()
+{
+    if (d->transferService->deviceOpened())
+    {
+        d->statusIcon->setPixmap(QPixmap(":/icons/usb_connected_status.png").scaledToHeight(statusBar()->height()/1.4));
+        statusBar()->showMessage("usb device connected");
+    }
+    else
+    {
+        d->statusIcon->setPixmap(QPixmap(":/icons/usb_disconnected_status.png").scaledToHeight(statusBar()->height()/1.4));
+        statusBar()->showMessage("usb device disconnected");
+    }
+}
+
+void MainWindow::updateDAC(int chId, int value)
+{
+    d->daConverterService->updateDAC(chId, value);
+}
+
+void MainWindow::updateGenerator(int chId, double value)
 {
     //d->freqGenService->update(d->chBoxes.indexOf(chBox), value);
-    d->genChannel = d->freqGenService->load(chId);
+    d->channel = d->freqGenService->load(chId);
     //convert to Hz before set
-    double HzValue = utils::UnitConversion::frequencyConvert(value, ::availableUnits.value(d->chUnitCurrentIndex), dto::Channel::Hz);
+    quint32 HzValue = utils::UnitConversion::frequencyConvert(value, ::availableUnits.value(d->chUnitCurrentIndex), dto::Channel::Hz);
     qDebug()<<"channel ID:"<<chId+1<<"displayed val: "<<value<<"in Hz: "<<HzValue;
-    d->genChannel->setFreq(HzValue);
-    d->freqGenService->update(d->genChannel);
+    d->channel->setValue(HzValue);
+    d->freqGenService->update(d->channel);
+}
+
+void MainWindow::onMeasureClick()
+{
+    if (!d->transferService->deviceOpened())
+    {
+        qDebug()<<"Cannot start measure! usb device not opened";
+        QMessageBox::critical(0, "Warning", "Cannot start measure! Device not connected!");
+        return;
+    }
+
+    d->transferService->transferCommand(domain::TransferService::startMeasure);
+    presentationManager->chartWindow()->startReading();
+    presentationManager->chartWindow()->show();
+}
+
+void MainWindow::initToolBar()
+{
+    ui->mainToolBar->addAction(QIcon(":/icons/usb_disconnected.png"), "usb connection", this, SLOT(usbToggle()));
 }

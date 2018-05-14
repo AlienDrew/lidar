@@ -25,7 +25,8 @@ namespace core
     {
         Q_OBJECT
     public:
-        Impl(Application* parent, QApplication& app, domain::ServiceRegistry& serviceReg);
+        Impl(Application* parent, QApplication& app, domain::ServiceRegistry& serviceReg,
+             presentation::PresentationManager& presentationMgr);
         Impl(Application* parent, int& argc, char** argv, const QString& appName);
         bool start();
         int exec();
@@ -41,6 +42,7 @@ namespace core
         QLockFile* m_lock = nullptr;
         bool m_isExternalApp;
         bool m_isExternalService;
+        bool m_isExternalPresentationManager;
     };
 }
 

@@ -8,9 +8,14 @@ namespace
 {
     QMap <QString, QVariant> defaultSettings =
     {
-        {DACoverterSettings::bitDepth, 12},
-        {FreqGeneratorSettings::channelCount, 3},
-        {FreqGeneratorSettings::maxFrequency, 200000000}
+        {dac::maxVal, 256},
+        {dac::vRef, 3.3},
+        {dac::channelCount, 1},
+        {freq_generator::channelCount, 2},
+        {freq_generator::maxFrequency, 200000000},
+        {communication::usb::VID, 1155},
+        {communication::usb::PID, 22352},
+        {communication::usb::packetSize, 64}
     };
 }
 

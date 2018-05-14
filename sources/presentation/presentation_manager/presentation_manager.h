@@ -14,18 +14,25 @@ namespace presentation
     {
         Q_OBJECT
     public:
+        static PresentationManager* instance();
         PresentationManager(QObject *parent = nullptr);
         ~PresentationManager() override;
 
         presentation::MainWindow* mainWindow() const;
         presentation::SettingsWindow* settingsWindow() const;
         presentation::AboutDialog* aboutDialog() const;
-    signals:
+        presentation::ChartWindow* chartWindow() const;
 
     private:
+        static PresentationManager* self;
+
         class Impl;
         const QScopedPointer<Impl> d;
+
+        Q_DISABLE_COPY(PresentationManager)
     };
 }
+
+#define presentationManager (presentation::PresentationManager::instance())
 
 #endif // PRESENTATION_MANAGER_H

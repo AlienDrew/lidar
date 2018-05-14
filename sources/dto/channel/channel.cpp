@@ -2,14 +2,14 @@
 
 using namespace dto;
 
-void Channel::setFreq(qreal freq)
+void Channel::setValue(quint32 val)
 {
-    m_freq = freq;
+    m_value = val;
 }
 
-qreal Channel::freq() const
+quint32 Channel::value() const
 {
-    return m_freq;
+    return m_value;
 }
 
 bool Channel::operator ==(const Channel& channel)

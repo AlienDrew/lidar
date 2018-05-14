@@ -10,6 +10,11 @@ namespace domain
     class ServiceRegistry;
 }
 
+namespace presentation
+{
+    class PresentationManager;
+}
+
 namespace core
 {
     class Application : public QObject
@@ -17,7 +22,8 @@ namespace core
         Q_OBJECT
     public:
         Application(int& argc, char** argv, const QString& appName, QObject* parent = nullptr);
-        Application(QApplication& app, domain::ServiceRegistry& serviceReg, QObject* parent = nullptr);
+        Application(QApplication& app, domain::ServiceRegistry& serviceReg,
+                    presentation::PresentationManager& presentationMgr, QObject* parent = nullptr);
         ~Application() override;
         bool start();
         void quit();

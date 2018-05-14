@@ -6,6 +6,8 @@
 namespace domain
 {
     class FreqGeneratorService;
+    class TransferService;
+    class DAConverterService;
 
     class ServiceRegistry
     {
@@ -14,6 +16,8 @@ namespace domain
         virtual ~ServiceRegistry();
         static ServiceRegistry* instance();
         FreqGeneratorService* freqGeneratorService();
+        DAConverterService* daConverterService();
+        TransferService* transferService();
     private:
         static ServiceRegistry* self;
 

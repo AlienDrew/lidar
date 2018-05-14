@@ -18,8 +18,14 @@ namespace presentation
         ~MainWindow() override;
         const QMap<QString, QAction*>& actionMap() const;
     private slots:
-        void updateGenerator(double value, int chId);
+        void usbToggle();
+        void updateStatusBar();
+        void updateDAC(int chId, int value);
+        void updateGenerator(int chId, double value);
+        void onMeasureClick();
     private:
+        void initToolBar();
+
         class Impl;
         Ui::MainWindow* ui;
         const QScopedPointer <Impl> d;

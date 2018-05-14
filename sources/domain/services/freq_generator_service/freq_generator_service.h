@@ -15,11 +15,10 @@ namespace domain
         ~FreqGeneratorService() override;
 
         dto::ChannelPtr load(int chId);
-        void update(int chId, double freq);
+        void update(int chId, quint32 freq);
         void update(dto::ChannelPtr generatorChannel);
-        //qreal convertFreq(qreal freq, dto::Channel::Units unit);
     signals:
-        void chUpdated(int chId);
+        void chUpdated(dto::ChannelPtr channel);
 
     private:
         class Impl;

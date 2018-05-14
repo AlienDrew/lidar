@@ -14,8 +14,9 @@ Application::Application(int& argc, char** argv, const QString& appName, QObject
 
 }
 
-Application::Application(QApplication &app, domain::ServiceRegistry& serviceReg, QObject* parent): QObject(parent),
-    d(new Impl(this, app, serviceReg))
+Application::Application(QApplication &app, domain::ServiceRegistry& serviceReg,
+                         presentation::PresentationManager& presentationMgr, QObject* parent): QObject(parent),
+    d(new Impl(this, app, serviceReg, presentationMgr))
 {
 
 }

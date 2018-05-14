@@ -8,7 +8,7 @@ namespace dto
     class Channel
     {
     public:
-        enum Units
+        enum FrequencyUnits
         {
             Hz,
             KHz,
@@ -17,12 +17,12 @@ namespace dto
 
         void setChannelId(int channelId);
         int channelId() const;
-        void setFreq(qreal freq);
-        qreal freq() const;
+        void setValue(quint32 val);
+        quint32 value() const;
         bool operator == (const Channel& channel);
     private:
         int m_channelId;
-        qreal m_freq = 0;
+        quint32 m_value = 0;
     };
 }
 

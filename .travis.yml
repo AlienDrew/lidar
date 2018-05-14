@@ -7,6 +7,11 @@ install:
   - travis_retry sudo apt-get update
   - travis_wait 30 sudo apt-get -y install -qq mesa-common-dev qt510-meta-full qt510charts-no-lgpl
 
+addons:
+  apt:
+    packages:
+      - libusb-1.0.0-dev
+
 script:
   - source /opt/qt510/bin/qt510-env.sh 
   - mkdir build

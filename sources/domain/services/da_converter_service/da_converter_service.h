@@ -4,16 +4,26 @@
 #include <QObject>
 #include "dto_traits.h"
 
-class DAConverterService : public QObject
+namespace domain
 {
-    Q_OBJECT
-public:
-    explicit DAConverterService(QObject *parent = nullptr);
-    ~DAConverterService() override;
+    class DAConverterService : public QObject
+    {
+        Q_OBJECT
+    public:
+        explicit DAConverterService(QObject *parent = nullptr);
+        dto::ChannelPtr load(int chId);
+        void updateDAC(int chId, int value);
+        ~DAConverterService() override;
 
-signals:
+    signals:
+        void chUpdated(dto::ChannelPtr channel);
 
-public slots:
-};
+    public slots:
+    private:
+        class Impl;
+        QScopedPointer<Impl> d;
+    };
+
+}
 
 #endif // DA_CONVERTER_SERVICE_H

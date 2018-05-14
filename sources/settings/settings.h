@@ -5,14 +5,25 @@
 
 namespace settings
 {
-    namespace DACoverterSettings
+    namespace dac
     {
-        const QString bitDepth = "bit_depth";
+        const QString maxVal = "max_val";
+        const QString vRef = "v_ref";
+        const QString channelCount = "channel_count";
     }
-    namespace FreqGeneratorSettings
+    namespace freq_generator
     {
         const QString channelCount = "channel_count";
         const QString maxFrequency = "max_frequency";
+    }
+    namespace communication
+    {
+        namespace usb
+        {
+            const QString VID = "vid";
+            const QString PID = "pid";
+            const QString packetSize = "pack_size";
+        }
     }
 }
 

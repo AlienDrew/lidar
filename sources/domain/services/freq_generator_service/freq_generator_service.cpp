@@ -16,7 +16,7 @@ public:
 FreqGeneratorService::FreqGeneratorService(QObject* parent) : QObject(parent),
     d(new Impl)
 {
-    int channelCount = settingsProvider->value(settings::FreqGeneratorSettings::channelCount).toInt();
+    int channelCount = settingsProvider->value(settings::freq_generator::channelCount).toInt();
     for (int i = 0; i<channelCount; ++i)
     {
         dto::ChannelPtr ch(new dto::Channel);
@@ -30,7 +30,7 @@ FreqGeneratorService::~FreqGeneratorService()
 
 }
 
-void FreqGeneratorService::update(int chId, double freq)
+void FreqGeneratorService::update(int chId, quint32 freq)
 {
     dto::ChannelPtr channel = d->channelList.at(chId);
     if (channel.isNull())
@@ -38,9 +38,9 @@ void FreqGeneratorService::update(int chId, double freq)
         qFatal("error in %s: no such channel", Q_FUNC_INFO);
         return;
     }
-    channel->setFreq(freq);
+    channel->setValue(freq);
     d->channelList[chId] = channel;
-    emit chUpdated(chId);
+    emit chUpdated(channel);
 }
 
 dto::ChannelPtr FreqGeneratorService::load(int chId)
@@ -53,13 +53,8 @@ void FreqGeneratorService::update(dto::ChannelPtr generatorChannel)
     if (d->channelList.contains(generatorChannel))
     {
         d->channelList[generatorChannel->channelId()] = generatorChannel;
-        emit chUpdated(generatorChannel->channelId());
+        emit chUpdated(generatorChannel);
     }
     else
         qFatal("error in %s: no such channel", Q_FUNC_INFO);
 }
-
-//qreal FreqGeneratorService::convertFreq(qreal freq, dto::Channel::Units unit)
-//{
-//    //TODO: make frequency conversion
-//}

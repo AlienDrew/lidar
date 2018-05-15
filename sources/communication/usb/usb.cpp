@@ -218,8 +218,8 @@ void USB::bulkWriteTransfer(QByteArray& data)
     {
         qDebug() << "Error sending data!" << libusb_error_name(status);
     }
-    if (transferred != packetSize())
-        qDebug()<<"Error sending data! transferred bytes doesn't equal packet size";
+//    if (transferred != packetSize())
+//        qDebug()<<"Error sending data! transferred bytes doesn't equal packet size";
     else
     {
         qDebug() << "Sended data" << data;

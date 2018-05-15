@@ -17,7 +17,8 @@ namespace domain
             dac = 1,
             gen,
             adc,
-            startMeasure
+            startMeasure,
+            hv_ctrl
         };
         TransferService();
         ~TransferService() override;
@@ -26,8 +27,9 @@ namespace domain
         void closeDevice();
         bool deviceOpened() const;
     public slots:
-        void transferCommand(Command cmd);
-        void transferChannel(Command cmd, dto::ChannelPtr channel);
+        bool transferCommand(Command cmd);
+        bool transferCommand(Command cmd, uint8_t value);
+        bool transferChannel(Command cmd, dto::ChannelPtr channel);
         void getAdcData(QIODevice* device);
     private:
         class Impl;

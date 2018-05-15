@@ -19,7 +19,7 @@ namespace communication
 
         void asyncBulkReadTransfer();
         void cancelAsynchBulkReadTransfer();
-        void bulkWriteTransfer(QByteArray& data);
+        bool bulkWriteTransfer(QByteArray& data);
 
         //---DO NOT USE OUTSIDE---
         void setDataAvailable(bool value);

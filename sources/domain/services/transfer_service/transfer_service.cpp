@@ -46,16 +46,26 @@ bool TransferService::deviceOpened() const
     return d->usb->isOpened();
 }
 
-void TransferService::transferCommand(TransferService::Command cmd)
+bool TransferService::transferCommand(TransferService::Command cmd)
 {
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream.setVersion(QDataStream::Qt_5_10);
     stream<<(uint8_t)cmd;
-    d->usb->bulkWriteTransfer(data);
+    return d->usb->bulkWriteTransfer(data);
 }
 
-void TransferService::transferChannel(Command cmd, dto::ChannelPtr channel)
+bool TransferService::transferCommand(TransferService::Command cmd, uint8_t value)
+{
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream.setVersion(QDataStream::Qt_5_10);
+    stream<<(uint8_t)cmd;
+    stream<<(uint8_t)value;
+    return d->usb->bulkWriteTransfer(data);
+}
+
+bool TransferService::transferChannel(Command cmd, dto::ChannelPtr channel)
 {
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
@@ -65,7 +75,7 @@ void TransferService::transferChannel(Command cmd, dto::ChannelPtr channel)
     uint32_t f = channel->value();
     data.append(reinterpret_cast<const char*>(&f), sizeof(f)); //4 bytes
     //d->communicationInterface->write(data);
-    d->usb->bulkWriteTransfer(data);
+    return d->usb->bulkWriteTransfer(data);
 }
 
 void TransferService::getAdcData(QIODevice* device)

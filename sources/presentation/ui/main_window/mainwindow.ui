@@ -243,28 +243,6 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QSlider" name="pulseBoostSwitch">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>35</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="maximum">
-          <number>1</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QDoubleSpinBox" name="laserPwrBox">
          <property name="maximum">
@@ -332,6 +310,19 @@
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout_2">
+         <item row="2" column="1">
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="ch1Box">
            <property name="decimals">
@@ -382,9 +373,6 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="2">
-          <widget class="QComboBox" name="ch2Units"/>
-         </item>
          <item row="1" column="2">
           <widget class="QComboBox" name="ch1Units"/>
          </item>
@@ -398,15 +386,31 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="3" rowspan="3">
-          <widget class="QPushButton" name="setCh2Button">
+         <item row="4" column="2">
+          <widget class="QComboBox" name="ch2Units"/>
+         </item>
+         <item row="7" column="3">
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="3">
+          <widget class="QPushButton" name="setCh1Button">
            <property name="text">
             <string>SET</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="3" rowspan="3">
-          <widget class="QPushButton" name="setCh1Button">
+         <item row="4" column="3">
+          <widget class="QPushButton" name="setCh2Button">
            <property name="text">
             <string>SET</string>
            </property>
@@ -440,23 +444,6 @@
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="1" column="0">
         <layout class="QGridLayout" name="gridLayout_5">
-         <item row="0" column="4" rowspan="3">
-          <widget class="QPushButton" name="setBiasButton">
-           <property name="text">
-            <string>SET</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="3" rowspan="4">
-          <widget class="QDial" name="gainDial">
-           <property name="maximumSize">
-            <size>
-             <width>1000000</width>
-             <height>1000000</height>
-            </size>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0" colspan="3">
           <widget class="QLabel" name="label_7">
            <property name="font">
@@ -482,54 +469,6 @@
            </property>
            <property name="text">
             <string>Gain:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="4" rowspan="4">
-          <widget class="QPushButton" name="setGainButton">
-           <property name="text">
-            <string>SET</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1" rowspan="2">
-          <widget class="QSpinBox" name="gainBox"/>
-         </item>
-         <item row="4" column="0" rowspan="2">
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string>K =</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3" rowspan="3">
-          <widget class="QDial" name="biasDial">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>1000000</width>
-             <height>1000000</height>
-            </size>
-           </property>
-           <property name="maximum">
-            <number>4</number>
-           </property>
-           <property name="tracking">
-            <bool>true</bool>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="wrapping">
-            <bool>false</bool>
-           </property>
-           <property name="notchesVisible">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -561,7 +500,50 @@
            <property name="singleStep">
             <double>0.200000000000000</double>
            </property>
+           <property name="value">
+            <double>3.300000000000000</double>
+           </property>
           </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_10">
+           <property name="text">
+            <string>K =</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QSpinBox" name="gainBox"/>
+         </item>
+         <item row="4" column="3">
+          <widget class="QPushButton" name="setGainButton">
+           <property name="text">
+            <string>SET</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3" rowspan="3">
+          <widget class="QPushButton" name="setBiasButton">
+           <property name="text">
+            <string>SET</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Preferred</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>

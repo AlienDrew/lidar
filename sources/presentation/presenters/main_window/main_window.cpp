@@ -10,6 +10,7 @@
 #include "transfer_service.h"
 #include "unit_conversion.h"
 #include "presentation_manager.h"
+#include "switch.h"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -111,18 +112,18 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
 
-    connect(ui->biasDial, &QDial::valueChanged, this, [this](int value)
-    {
-        ui->biasBox->blockSignals(true);
-        ui->biasBox->setValue(value);
-        ui->biasBox->blockSignals(false);
-    });
-    connect(ui->biasBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](int value)
-    {
-        ui->biasDial->blockSignals(true);
-        ui->biasDial->setValue(value);
-        ui->biasDial->blockSignals(false);
-    });
+//    connect(ui->biasDial, &QDial::valueChanged, this, [this](int value)
+//    {
+//        ui->biasBox->blockSignals(true);
+//        ui->biasBox->setValue(value);
+//        ui->biasBox->blockSignals(false);
+//    });
+//    connect(ui->biasBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](int value)
+//    {
+//        ui->biasDial->blockSignals(true);
+//        ui->biasDial->setValue(value);
+//        ui->biasDial->blockSignals(false);
+//    });
     connect(ui->setBiasButton, &QPushButton::clicked, this, [this]()
     {
         updateDAC(0, utils::UnitConversion::voltsToDAC(ui->biasBox->value()));
@@ -133,12 +134,13 @@ MainWindow::MainWindow(QWidget *parent) :
         updateDAC(1, utils::UnitConversion::voltsToDAC(ui->laserPwrBox->value()));
     });
 
-    connect(ui->pulseBoostSwitch, &QSlider::sliderPressed, this, [this]()
+    Switch *pulseBoostSwitch = new Switch(this);
+    ui->laserGroup->layout()->addWidget(pulseBoostSwitch);
+    pulseBoostSwitch->setMaximumWidth(40);
+    connect(pulseBoostSwitch, &Switch::toggled, this, [=](bool isOn)
     {
-        if (ui->pulseBoostSwitch->value() == 0)
-            ui->pulseBoostSwitch->setValue(1);
-        else if (ui->pulseBoostSwitch->value() == 1)
-            ui->pulseBoostSwitch->setValue(0);
+        if (!d->transferService->transferCommand(domain::TransferService::hv_ctrl, (uint8_t)isOn))
+            pulseBoostSwitch->setToggle(!isOn);
     });
 
     connect(d->daConverterService, &domain::DAConverterService::chUpdated, this, [this](dto::ChannelPtr channel)
@@ -196,6 +198,7 @@ void MainWindow::updateStatusBar()
 
 void MainWindow::updateDAC(int chId, int value)
 {
+    qDebug()<<value;
     d->daConverterService->updateDAC(chId, value);
 }
 

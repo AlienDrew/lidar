@@ -198,12 +198,12 @@ void USB::cancelAsynchBulkReadTransfer()
     }
 }
 
-void USB::bulkWriteTransfer(QByteArray& data)
+bool USB::bulkWriteTransfer(QByteArray& data)
 {
     if (!isOpened())
     {
         qCritical("cannot write data. usb device is not opened/connected!");
-        return;
+        return false;
     }
     int status;
     int transferred = 0;
@@ -217,6 +217,7 @@ void USB::bulkWriteTransfer(QByteArray& data)
     if (status < 0)
     {
         qDebug() << "Error sending data!" << libusb_error_name(status);
+        return false;
     }
 //    if (transferred != packetSize())
 //        qDebug()<<"Error sending data! transferred bytes doesn't equal packet size";
@@ -224,6 +225,7 @@ void USB::bulkWriteTransfer(QByteArray& data)
     {
         qDebug() << "Sended data" << data;
     }
+    return true;
 }
 
 void USB::eventThread()

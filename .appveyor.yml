@@ -1,0 +1,19 @@
+version: '{build}'
+
+environment:
+  matrix:
+  - QT5: C:\Qt\5.10.1\mingw53_32
+    MINGW: C:\Qt\Tools\mingw530_32
+    use_cmake: "true"
+
+before_build:
+- set PATH=%MINGW%\bin;%QT5%\bin;C:\Program Files (x86)\CMake\bin;%PATH%
+
+build_script:
+  - mkdir .\build
+  - cd .\build
+
+  if [%use_cmake%]==[true] (
+    cmake --version &&
+    cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release .. &&
+    make)

@@ -2,6 +2,7 @@
 
 #include "channel.h"
 #include "usb.h"
+#include "data_parser.h"
 
 #include <QDataStream>
 #include <QVector>
@@ -14,13 +15,17 @@ class TransferService::Impl
 {
 public:
     communication::USB* usb = nullptr;
+    utils::DataParser* dataParser = nullptr;
 };
 
 TransferService::TransferService() : d(new Impl)
 {
     d->usb = new communication::USB();
+    connect(d->usb, &communication::USB::deviceDisconnected, this, &TransferService::closeDevice); //hotPlug disconnect
+    connect(d->usb, &communication::USB::deviceDisconnected, this, &TransferService::hotPlugDeviceLeft); //hotPlug disconnect
     //d->usb->initialize();
     //d->usb->open();
+    d->dataParser = new utils::DataParser(this);
 }
 
 TransferService::~TransferService()
@@ -33,11 +38,14 @@ bool TransferService::openDevice()
 {
     d->usb->initialize();
     d->usb->open();
+    transferCommand(domain::TransferService::usb_connected);
+    listenData();
     return d->usb->isOpened();
 }
 
 void TransferService::closeDevice()
 {
+    transferCommand(domain::TransferService::usb_disconnected);
     d->usb->close();
 }
 
@@ -85,4 +93,10 @@ void TransferService::getAdcData(QIODevice* device)
     {
         device->write(data);
     });
+}
+
+void TransferService::listenData()
+{
+    d->usb->asyncBulkReadTransfer();
+    connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
 }

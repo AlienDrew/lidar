@@ -5,6 +5,7 @@
 #include "presentation_manager.h"
 #include "freq_generator_service.h"
 #include "da_converter_service.h"
+#include "digital_potentiometer_service.h"
 #include "transfer_service.h"
 
 using namespace domain;
@@ -17,6 +18,7 @@ public:
     TransferService transferService;
     FreqGeneratorService freqGenService;
     DAConverterService daConverterService;
+    DigitalPotentiometerService digitalPotentiometerSerivce;
 };
 
 ServiceRegistry::ServiceRegistry() : d(new Impl)
@@ -42,6 +44,11 @@ FreqGeneratorService* ServiceRegistry::freqGeneratorService()
 DAConverterService* ServiceRegistry::daConverterService()
 {
     return &d->daConverterService;
+}
+
+DigitalPotentiometerService*ServiceRegistry::digitalPotentiometerSerivce()
+{
+    return &d->digitalPotentiometerSerivce;
 }
 
 TransferService* ServiceRegistry::transferService()

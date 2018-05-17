@@ -257,7 +257,7 @@
      </widget>
     </item>
     <item row="4" column="0" colspan="2">
-     <widget class="QGroupBox" name="groupBox_2">
+     <widget class="QGroupBox" name="RxTx">
       <property name="title">
        <string>Rx/Tx</string>
       </property>
@@ -298,6 +298,12 @@
       <property name="enabled">
        <bool>true</bool>
       </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>180</height>
+       </size>
+      </property>
       <property name="maximumSize">
        <size>
         <width>270</width>
@@ -310,19 +316,6 @@
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="2" column="1">
-          <spacer name="verticalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="ch1Box">
            <property name="decimals">
@@ -389,19 +382,6 @@
          <item row="4" column="2">
           <widget class="QComboBox" name="ch2Units"/>
          </item>
-         <item row="7" column="3">
-          <spacer name="verticalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
          <item row="1" column="3">
           <widget class="QPushButton" name="setCh1Button">
            <property name="text">
@@ -415,6 +395,32 @@
             <string>SET</string>
            </property>
           </widget>
+         </item>
+         <item row="2" column="2">
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="7" column="2">
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -458,7 +464,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0" colspan="3">
+         <item row="4" column="0" colspan="3">
           <widget class="QLabel" name="label_8">
            <property name="font">
             <font>
@@ -472,27 +478,60 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_9">
-           <property name="text">
-            <string>Ubias =</string>
+         <item row="5" column="1">
+          <widget class="QSpinBox" name="gainBox">
+           <property name="maximum">
+            <number>255</number>
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QLabel" name="label_11">
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_10">
            <property name="maximumSize">
             <size>
-             <width>10</width>
+             <width>90</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="text">
-            <string>В</string>
+            <string>K =</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="5" column="3">
+          <widget class="QPushButton" name="setGainButton">
+           <property name="text">
+            <string>SET</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QSlider" name="biasSlider">
+           <property name="maximumSize">
+            <size>
+             <width>78</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="3">
+          <widget class="QSlider" name="gainSlider">
+           <property name="maximumSize">
+            <size>
+             <width>78</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1" rowspan="2">
           <widget class="QDoubleSpinBox" name="biasBox">
            <property name="maximum">
             <double>3.300000000000000</double>
@@ -505,45 +544,32 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_10">
+         <item row="1" column="0" rowspan="2">
+          <widget class="QLabel" name="label_9">
            <property name="text">
-            <string>K =</string>
+            <string>Ubias =</string>
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
-          <widget class="QSpinBox" name="gainBox"/>
-         </item>
-         <item row="4" column="3">
-          <widget class="QPushButton" name="setGainButton">
+         <item row="1" column="2" rowspan="2">
+          <widget class="QLabel" name="label_11">
+           <property name="maximumSize">
+            <size>
+             <width>10</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="text">
-            <string>SET</string>
+            <string>В</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="3" rowspan="3">
+         <item row="1" column="3" rowspan="2">
           <widget class="QPushButton" name="setBiasButton">
            <property name="text">
             <string>SET</string>
            </property>
           </widget>
-         </item>
-         <item row="5" column="1">
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Preferred</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>

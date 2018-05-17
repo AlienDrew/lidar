@@ -1,24 +1,19 @@
 #ifndef FREQ_GENERATOR_SERVICE_H
 #define FREQ_GENERATOR_SERVICE_H
 
-#include <QObject>
-#include "dto_traits.h"
-
+#include "base_peripheral_service.h"
 
 namespace domain
 {
-    class FreqGeneratorService : public QObject
+    class FreqGeneratorService : public BasePeripheralService
     {
         Q_OBJECT
     public:
         explicit FreqGeneratorService(QObject* parent = nullptr);
         ~FreqGeneratorService() override;
 
-        dto::ChannelPtr load(int chId);
-        void update(int chId, quint32 freq);
-        void update(dto::ChannelPtr generatorChannel);
-    signals:
-        void chUpdated(dto::ChannelPtr channel);
+        void updateGenerator(int chId, quint32 freq);
+        void updateGenerator(dto::ChannelPtr generatorChannel);
 
     private:
         class Impl;

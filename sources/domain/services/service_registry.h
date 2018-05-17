@@ -6,8 +6,9 @@
 namespace domain
 {
     class FreqGeneratorService;
-    class TransferService;
     class DAConverterService;
+    class DigitalPotentiometerService;
+    class TransferService;
 
     class ServiceRegistry
     {
@@ -17,6 +18,7 @@ namespace domain
         static ServiceRegistry* instance();
         FreqGeneratorService* freqGeneratorService();
         DAConverterService* daConverterService();
+        DigitalPotentiometerService* digitalPotentiometerSerivce();
         TransferService* transferService();
     private:
         static ServiceRegistry* self;

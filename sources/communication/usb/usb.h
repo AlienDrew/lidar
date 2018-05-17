@@ -3,6 +3,8 @@
 
 #include <QObject>
 
+struct libusb_device_handle;
+
 namespace communication
 {
     class USB : public QObject
@@ -22,6 +24,7 @@ namespace communication
         bool bulkWriteTransfer(QByteArray& data);
 
         //---DO NOT USE OUTSIDE---
+        libusb_device_handle* handle() const;
         void setDataAvailable(bool value);
         QByteArray dataIn() const;
         int packetSize();
@@ -29,6 +32,7 @@ namespace communication
         //------------------------
     signals:
         void readyRead(QByteArray data);
+        void deviceDisconnected();
 
     private:
         void eventThread();

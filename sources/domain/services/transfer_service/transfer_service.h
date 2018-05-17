@@ -18,7 +18,10 @@ namespace domain
             gen,
             adc,
             startMeasure,
-            hv_ctrl
+            hv_ctrl,
+            digital_pot,
+            usb_connected,
+            usb_disconnected
         };
         TransferService();
         ~TransferService() override;
@@ -31,6 +34,9 @@ namespace domain
         bool transferCommand(Command cmd, uint8_t value);
         bool transferChannel(Command cmd, dto::ChannelPtr channel);
         void getAdcData(QIODevice* device);
+        void listenData();
+    signals:
+        void hotPlugDeviceLeft();
     private:
         class Impl;
         QScopedPointer<Impl> d;

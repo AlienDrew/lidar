@@ -20,7 +20,6 @@ namespace presentation
     private slots:
         void usbToggle();
         void updateStatusBar();
-        void updateDAC(int chId, int value);
         void updateGenerator(int chId, double value);
         void onMeasureClick();
     private:

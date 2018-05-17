@@ -7,13 +7,11 @@ environment:
     use_cmake: "true"
 
 before_build:
-- set PATH=%MINGW%\bin;%QT5%\bin;C:\Program Files (x86)\CMake\bin;%PATH%
+  - set PATH=%MINGW%\bin;%QT5%\bin;%SystemRoot%\system32;%PATH%
+  - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
 
 build_script:
   - mkdir .\build
   - cd .\build
 
-  if [%use_cmake%]==[true] (
-    cmake --version &&
-    cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release .. &&
-    make)
+    cmake --version && cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..

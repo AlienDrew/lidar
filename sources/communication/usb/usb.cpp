@@ -23,6 +23,7 @@ public:
 
     libusb_context *context = nullptr;
     libusb_device_handle* handle = nullptr;
+    libusb_hotplug_callback_handle hotplugHandle;
     libusb_transfer* pcToUsbTransfer = nullptr;
     libusb_transfer* usbToPcTransfer = nullptr;
 
@@ -75,6 +76,31 @@ extern "C" void LIBUSB_CALL asyncBulkWriteTransferCallback(struct libusb_transfe
 
 }
 
+extern "C" int LIBUSB_CALL hotplug_callback(struct libusb_context* ctx, struct libusb_device* dev, libusb_hotplug_event event,
+                                             void* user_data)
+{
+    static libusb_device_handle* handle = NULL;
+    //struct libusb_device_descriptor desc;
+    USB* usb = static_cast<USB*>(user_data);
+    //(void)libusb_get_device_descriptor(dev, &desc);
+
+    if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
+    {
+        if (handle)
+        {
+            libusb_close(handle);
+            handle = NULL;
+        }
+        else if (usb->handle())
+        {
+            emit usb->deviceDisconnected();
+        }
+    }
+    else
+        qDebug()<<"Unhandled event "<<event;
+    return 0;
+}
+
 void USB::initialize(bool debug)
 {
     int status;
@@ -110,6 +136,20 @@ void USB::open()
         d->isOpen = false;
         return;
     }
+
+    int rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, LIBUSB_HOTPLUG_NO_FLAGS,
+                                          settingsProvider->value(settings::communication::usb::VID).toUInt(),
+                                          settingsProvider->value(settings::communication::usb::PID).toUInt(),
+                                          LIBUSB_HOTPLUG_MATCH_ANY,
+                                          hotplug_callback, this,
+                                          &d->hotplugHandle);
+    if(rc != LIBUSB_SUCCESS)
+    {
+        qDebug()<<"Error creating a hotplug callback!";
+    }
+    d->enableEventThread = true;
+    if(!d->future.isRunning())
+        d->future = QtConcurrent::run(this, &USB::eventThread);
     d->isOpen = true;
 }
 
@@ -133,6 +173,7 @@ void USB::close()
         d->enableEventThread = false;
         //d->future.cancel();
         d->future.waitForFinished();
+        libusb_hotplug_deregister_callback(d->context, d->hotplugHandle);
         //libusb_attach_kernel_driver(d->handle, 0);
         libusb_release_interface(d->handle, DEV_INTF);
         libusb_close(d->handle);
@@ -228,10 +269,15 @@ bool USB::bulkWriteTransfer(QByteArray& data)
     return true;
 }
 
+libusb_device_handle* USB::handle() const
+{
+    return d->handle;
+}
+
 void USB::eventThread()
 {
     timeval zero_tv;
-    libusb_submit_transfer(d->usbToPcTransfer);
+    //libusb_submit_transfer(d->usbToPcTransfer);
     while (d->enableEventThread)
     {
         //libusb_handle_events(d->context);

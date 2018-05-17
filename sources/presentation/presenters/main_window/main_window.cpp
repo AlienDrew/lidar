@@ -7,6 +7,7 @@
 #include "channel.h"
 #include "da_converter_service.h"
 #include "freq_generator_service.h"
+#include "digital_potentiometer_service.h"
 #include "transfer_service.h"
 #include "unit_conversion.h"
 #include "presentation_manager.h"
@@ -22,6 +23,7 @@ class MainWindow::Impl
 public:
     domain::DAConverterService* daConverterService;
     domain::FreqGeneratorService* freqGenService;
+    domain::DigitalPotentiometerService* digitalPotentiometerService;
     domain::TransferService* transferService;
     dto::ChannelPtr channel;
 
@@ -69,13 +71,45 @@ MainWindow::MainWindow(QWidget *parent) :
 
     d->daConverterService = serviceRegistry->daConverterService();
     d->freqGenService = serviceRegistry->freqGeneratorService();
+    d->digitalPotentiometerService = serviceRegistry->digitalPotentiometerSerivce();
     d->transferService = serviceRegistry->transferService();
 
+    //===setting ranges/steps for fields===
+    ui->ch1Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
+    ui->ch1Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
+    ui->ch2Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
+    ui->ch2Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
+
+    qreal biasStep = 0.1;
+    ui->biasBox->setMaximum(settingsProvider->value(settings::dac::vRef).toDouble());
+    ui->biasBox->setSingleStep(biasStep);
+    ui->biasSlider->setMaximum(qRound(settingsProvider->value(settings::dac::vRef).toDouble()/biasStep));
+    ui->biasSlider->setValue(ui->biasSlider->maximum());
+
+    qreal gainStep = 1;
+    ui->gainBox->setMaximum(settingsProvider->value(settings::digital_potentiometer::maxVal).toInt());
+    ui->gainBox->setSingleStep(gainStep);
+    ui->gainSlider->setMaximum(settingsProvider->value(settings::digital_potentiometer::maxVal).toInt()/gainStep);
+
+    ui->laserPwrBox->setMaximum(settingsProvider->value(settings::dac::vRef).toDouble());
+    //========================
+
+    //===setting status bar===
     d->statusIcon = new QLabel(this);
     d->statusIcon->setPixmap(QPixmap(":/icons/usb_disconnected_status.png").scaledToHeight(statusBar()->height()/2));
     d->statusIcon->setToolTip("usb status");
     statusBar()->insertPermanentWidget(0,d->statusIcon, 0);
     statusBar()->showMessage("usb device disconnected");
+    //========================
+
+    connect(d->transferService, &domain::TransferService::hotPlugDeviceLeft, this, [this]()
+    {
+        if (!d->transferService->deviceOpened())
+        {
+            ui->mainToolBar->actions().at(0)->setIcon(QIcon(":/icons/usb_disconnected.png"));
+            updateStatusBar();
+        }
+    });
 
     for (QPushButton* chButton : d->chButtons)
     {
@@ -112,29 +146,46 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
 
-//    connect(ui->biasDial, &QDial::valueChanged, this, [this](int value)
-//    {
-//        ui->biasBox->blockSignals(true);
-//        ui->biasBox->setValue(value);
-//        ui->biasBox->blockSignals(false);
-//    });
-//    connect(ui->biasBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](int value)
-//    {
-//        ui->biasDial->blockSignals(true);
-//        ui->biasDial->setValue(value);
-//        ui->biasDial->blockSignals(false);
-//    });
+    connect(ui->biasSlider, &QSlider::valueChanged, this, [biasStep, this](int value)
+    {
+        ui->biasBox->blockSignals(true);
+        ui->biasBox->setValue(value*biasStep);
+        ui->biasBox->blockSignals(false);
+    });
+    connect(ui->biasBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [biasStep, this](double value)
+    {
+        ui->biasSlider->blockSignals(true);
+        ui->biasSlider->setValue(qRound(value/biasStep));
+        ui->biasSlider->blockSignals(false);
+    });
     connect(ui->setBiasButton, &QPushButton::clicked, this, [this]()
     {
-        updateDAC(0, utils::UnitConversion::voltsToDAC(ui->biasBox->value()));
+        d->daConverterService->updateDAC(0, utils::UnitConversion::voltsToDAC(ui->biasBox->value()));
+    });
+
+    connect(ui->gainSlider, &QSlider::valueChanged, this, [gainStep, this](int value)
+    {
+        ui->gainBox->blockSignals(true);
+        ui->gainBox->setValue(value*gainStep);
+        ui->gainBox->blockSignals(false);
+    });
+    connect(ui->gainBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value)
+    {
+        ui->gainSlider->blockSignals(true);
+        ui->gainSlider->setValue(value);
+        ui->gainSlider->blockSignals(false);
+    });
+    connect(ui->setGainButton, &QPushButton::clicked, this, [this]()
+    {
+        d->digitalPotentiometerService->updatePotentiometer(0, ui->gainBox->value());
     });
 
     connect(ui->setLaserPowButton, &QPushButton::clicked, this, [this]()
     {
-        updateDAC(1, utils::UnitConversion::voltsToDAC(ui->laserPwrBox->value()));
+        d->daConverterService->updateDAC(1, utils::UnitConversion::voltsToDAC(ui->laserPwrBox->value()));
     });
 
-    Switch *pulseBoostSwitch = new Switch(this);
+    Switch* pulseBoostSwitch = new Switch(this);
     ui->laserGroup->layout()->addWidget(pulseBoostSwitch);
     pulseBoostSwitch->setMaximumWidth(40);
     connect(pulseBoostSwitch, &Switch::toggled, this, [=](bool isOn)
@@ -143,13 +194,17 @@ MainWindow::MainWindow(QWidget *parent) :
             pulseBoostSwitch->setToggle(!isOn);
     });
 
-    connect(d->daConverterService, &domain::DAConverterService::chUpdated, this, [this](dto::ChannelPtr channel)
+    connect(d->daConverterService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel)
     {
         d->transferService->transferChannel(domain::TransferService::dac, channel);
     });
-    connect(d->freqGenService, &domain::FreqGeneratorService::chUpdated, this, [this](dto::ChannelPtr channel)
+    connect(d->freqGenService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel)
     {
         d->transferService->transferChannel(domain::TransferService::gen, channel);
+    });
+    connect(d->digitalPotentiometerService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel)
+    {
+       d->transferService->transferChannel(domain::TransferService::digital_pot, channel);
     });
 
     connect(ui->measureButton, &QPushButton::clicked, this, &MainWindow::onMeasureClick);
@@ -157,7 +212,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    d->transferService->closeDevice();
+    if (d->transferService->deviceOpened())
+    {
+        d->transferService->closeDevice();
+    }
     delete ui;
     qDebug()<<"main window destroyed";
 }
@@ -196,12 +254,6 @@ void MainWindow::updateStatusBar()
     }
 }
 
-void MainWindow::updateDAC(int chId, int value)
-{
-    qDebug()<<value;
-    d->daConverterService->updateDAC(chId, value);
-}
-
 void MainWindow::updateGenerator(int chId, double value)
 {
     //d->freqGenService->update(d->chBoxes.indexOf(chBox), value);
@@ -210,7 +262,7 @@ void MainWindow::updateGenerator(int chId, double value)
     quint32 HzValue = utils::UnitConversion::frequencyConvert(value, ::availableUnits.value(d->chUnitCurrentIndex), dto::Channel::Hz);
     qDebug()<<"channel ID:"<<chId+1<<"displayed val: "<<value<<"in Hz: "<<HzValue;
     d->channel->setValue(HzValue);
-    d->freqGenService->update(d->channel);
+    d->freqGenService->updateGenerator(d->channel);
 }
 
 void MainWindow::onMeasureClick()

@@ -49,7 +49,7 @@ qreal UnitConversion::frequencyConvert(qreal freq, dto::Channel::FrequencyUnits 
 
 int UnitConversion::voltsToDAC(qreal volts)
 {
-    if (volts==3.3)
+    if (volts==settingsProvider->value(settings::dac::vRef).toReal())
         return 255;
     return qRound(volts*settingsProvider->value(settings::dac::maxVal).toInt()/settingsProvider->value(settings::dac::vRef).toReal());
 }

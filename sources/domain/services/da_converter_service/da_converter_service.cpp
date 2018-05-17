@@ -7,38 +7,25 @@ using namespace domain;
 
 class DAConverterService::Impl
 {
-public:
-    dto::ChannelPtrList channelList;
 };
 
-DAConverterService::DAConverterService(QObject *parent) : QObject(parent),
+DAConverterService::DAConverterService(QObject* parent) :
+    BasePeripheralService(settingsProvider->value(settings::dac::channelCount).toInt(), parent),
     d(new Impl)
 {
-    int channelCount = settingsProvider->value(settings::dac::channelCount).toInt();
-    for (int i = 0; i<channelCount; ++i)
-    {
-        dto::ChannelPtr ch(new dto::Channel);
-        ch->setChannelId(i);
-        d->channelList.append(ch);
-    }
-}
 
-dto::ChannelPtr DAConverterService::load(int chId)
-{
-    return d->channelList.at(chId);
 }
 
 void DAConverterService::updateDAC(int chId, int value)
 {
-    dto::ChannelPtr channel = d->channelList.at(chId);
-    if (channel.isNull())
-    {
-        qFatal("error in %s: no such channel", Q_FUNC_INFO);
-        return;
-    }
-    channel->setValue(value);
-    d->channelList[chId] = channel;
-    emit chUpdated(channel);
+    if (chId<settingsProvider->value(settings::dac::channelCount).toInt() && value<=settingsProvider->value(settings::dac::maxVal).toInt())
+        BasePeripheralService::updateChannel(chId, value);
+}
+
+void DAConverterService::updateDAC(dto::ChannelPtr DACChannel)
+{
+    if (DACChannel->channelId()<settingsProvider->value(settings::dac::channelCount).toInt() && DACChannel->value()<=settingsProvider->value(settings::dac::maxVal).toUInt())
+        BasePeripheralService::updateChannel(DACChannel->channelId(), DACChannel->value());
 }
 
 DAConverterService::~DAConverterService()

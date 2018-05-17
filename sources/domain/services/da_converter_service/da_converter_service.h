@@ -1,27 +1,24 @@
 #ifndef DA_CONVERTER_SERVICE_H
 #define DA_CONVERTER_SERVICE_H
 
-#include <QObject>
-#include "dto_traits.h"
+#include "base_peripheral_service.h"
 
 namespace domain
 {
-    class DAConverterService : public QObject
+    class DAConverterService : public BasePeripheralService
     {
         Q_OBJECT
     public:
         explicit DAConverterService(QObject *parent = nullptr);
-        dto::ChannelPtr load(int chId);
         void updateDAC(int chId, int value);
+        void updateDAC(dto::ChannelPtr DACChannel);
         ~DAConverterService() override;
 
-    signals:
-        void chUpdated(dto::ChannelPtr channel);
-
-    public slots:
     private:
         class Impl;
         QScopedPointer<Impl> d;
+
+        Q_DISABLE_COPY(DAConverterService)
     };
 
 }

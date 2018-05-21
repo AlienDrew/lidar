@@ -12,17 +12,6 @@ namespace domain
     {
         Q_OBJECT
     public:
-        enum Command : uint8_t
-        {
-            dac = 1,
-            gen,
-            adc,
-            startMeasure,
-            hv_ctrl,
-            digital_pot,
-            usb_connected,
-            usb_disconnected
-        };
         TransferService();
         ~TransferService() override;
 
@@ -30,9 +19,8 @@ namespace domain
         void closeDevice();
         bool deviceOpened() const;
     public slots:
-        bool transferCommand(Command cmd);
-        bool transferCommand(Command cmd, uint8_t value);
-        bool transferChannel(Command cmd, dto::ChannelPtr channel);
+        bool transferCommand(const dto::Command& command);
+        bool transferChannel(const dto::Command& command, dto::ChannelPtr channel);
         void getAdcData(QIODevice* device);
         void listenData();
     signals:

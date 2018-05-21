@@ -10,7 +10,7 @@ namespace domain
         Q_OBJECT
     public:
         DigitalPotentiometerService(QObject* parent = nullptr);
-        void updatePotentiometer(int chId, int value);
+        void updatePotentiometer(int chId, quint32 value);
         void updatePotentiometer(dto::ChannelPtr channel);
         ~DigitalPotentiometerService() override;
 

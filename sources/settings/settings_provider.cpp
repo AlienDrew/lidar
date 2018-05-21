@@ -17,11 +17,20 @@ namespace
         {freq_generator::channelCount, 2},
         {freq_generator::minFrequency, 2500},
         {freq_generator::maxFrequency, 200000000},
+        {freq_generator::autoUnitConversion, false},
 
         //mcp41xx used
         {digital_potentiometer::maxVal, 255},
         {digital_potentiometer::vRef, 3.3},
         {digital_potentiometer::channelCount, 1},
+        {digital_potentiometer::minK, 3},
+        {digital_potentiometer::maxK, 100},
+
+        //internal stm32 adc used
+        {adc::maxVal, 4095},
+        {adc::vRef, 3.3},
+        {adc::samplingFreq, 50000},
+        {adc::maxNumberOfSamples, 1024},
 
         //custom HID device
         {communication::usb::VID, 1155},

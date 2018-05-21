@@ -53,3 +53,8 @@ int UnitConversion::voltsToDAC(qreal volts)
         return 255;
     return qRound(volts*settingsProvider->value(settings::dac::maxVal).toInt()/settingsProvider->value(settings::dac::vRef).toReal());
 }
+
+int UnitConversion::kToDAC(int k)
+{
+    return qRound(2.56*k-5.632);
+}

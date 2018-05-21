@@ -16,12 +16,22 @@ namespace settings
         const QString channelCount = "GEN/channel_count";
         const QString minFrequency = "GEN/min_frequency";
         const QString maxFrequency = "GEN/max_frequency";
+        const QString autoUnitConversion = "GEN/auto_unit_conversion";
     }
     namespace digital_potentiometer
     {
         const QString maxVal = "POT/max_val";
         const QString vRef = "POT/v_ref";
+        const QString maxK = "POT/max_k";
+        const QString minK = "POT/min_k";
         const QString channelCount = "POT/channel_count";
+    }
+    namespace adc
+    {
+        const QString maxVal = "ADC/max_val";
+        const QString vRef = "ADC/v_ref";
+        const QString samplingFreq = "ADC/sampling_freq";
+        const QString maxNumberOfSamples = "ADC/max_num_of_samples";
     }
     namespace communication
     {

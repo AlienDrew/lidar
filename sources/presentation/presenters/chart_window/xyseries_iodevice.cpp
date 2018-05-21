@@ -1,4 +1,7 @@
 #include "xyseries_iodevice.h"
+
+#include "settings_provider.h"
+
 #include <QtCharts/QXYSeries>
 
 using namespace presentation;
@@ -37,7 +40,9 @@ qint64 XYSeriesIODevice::readData(char* data, qint64 maxSize)
 
 qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
 {
-    qint64 range = 1024;
+    qint32 fs = settingsProvider->value(settings::adc::samplingFreq).toUInt();
+    qint64 indexRange = settingsProvider->value(settings::adc::maxNumberOfSamples).toUInt();
+    //qreal range = indexRange/fs;
     QVector<QPointF> oldPoints = m_series->pointsVector();
     QVector<QPointF> points;
 
@@ -45,7 +50,7 @@ qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
     QVector<QPointF> points2;
     int resolution = 4;
 
-    if (oldPoints.count() < range) {
+    if (oldPoints.count() < indexRange) {
         points = m_series->pointsVector();
     }
     else
@@ -54,7 +59,7 @@ qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
             points.append(QPointF(i - maxSize/resolution, oldPoints.at(i).y()));
     }
 
-    if (oldPoints2.count()< range)
+    if (oldPoints2.count()< indexRange)
     {
         points2 = m_series2->pointsVector();
     }
@@ -66,8 +71,8 @@ qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
 
     qint64 size = points.count();
     qint64 size2 = points2.count();
-    int j =0;
-    int j2=0;
+    int j = 0;
+    int j2 = 0;
 //    for (int k = 0; k < maxSize/resolution; k++)
 //        points.append(QPointF(k + size, convertFrom8To16(data[resolution*k], data[resolution*k+1])));
 
@@ -81,8 +86,10 @@ qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
 //    }
     for (int i = 0; i<maxSize; i+=4)
     {
-        points.append(QPointF((j++)+size, convertFrom8To16(data[i], data[i+1])));
-        points2.append(QPointF((j2++)+size2, convertFrom8To16(data[i+2], data[i+3])));
+        points.append(QPointF( (qreal)((j++)+size)/fs*1000000, (qreal)(convertFrom8To16(data[i], data[i+1])/settingsProvider->value(settings::adc::maxVal).toUInt())*
+                      settingsProvider->value(settings::adc::vRef).toReal()) );
+        points2.append(QPointF( (qreal)((j2++)+size2)/fs*1000000, (qreal)(convertFrom8To16(data[i+2], data[i+3])/settingsProvider->value(settings::adc::maxVal).toUInt())*
+                settingsProvider->value(settings::adc::vRef).toReal()) );
     }
 
     m_series->replace(points);

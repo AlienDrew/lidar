@@ -3,6 +3,7 @@
 
 #include "service_registry.h"
 #include "transfer_service.h"
+#include "settings_provider.h"
 #include "xyseries_iodevice.h"
 #include "chart_view.h"
 
@@ -64,19 +65,19 @@ ChartWindow::ChartWindow(QWidget *parent) :
     d->chart2->addSeries(d->ch2Series);
 
     QValueAxis* axisX = new QValueAxis(this);
-    axisX->setRange(0, 1024);
+    axisX->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
     axisX->setLabelFormat("%g");
-    axisX->setTitleText("Samples");
+    axisX->setTitleText("Time, us");
     QValueAxis* axisY = new QValueAxis(this);
-    axisY->setRange(0, 4096);
-    axisY->setTitleText("Value level");
+    axisY->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
+    axisY->setTitleText("Voltage, V");
 
     QValueAxis* axisX2 = new QValueAxis(this);
-    axisX2->setRange(0, 1024);
+    axisX2->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
     axisX2->setLabelFormat("%g");
     axisX2->setTitleText("Samples");
     QValueAxis* axisY2 = new QValueAxis(this);
-    axisY2->setRange(0, 4096);
+    axisY2->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
     axisY2->setTitleText("Value level");
 
     d->chart->setAxisX(axisX, d->series);

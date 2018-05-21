@@ -4,6 +4,7 @@
 #include "presentation_manager.h"
 
 #include <QApplication>
+#include <QMessageBox>
 #include <QLockFile>
 #include <QDebug>
 
@@ -98,15 +99,15 @@ void Application::Impl::init(const QString& appName)
 {
     m_lock = new QLockFile("lidar.lock");
     if (!m_lock->tryLock())
-        qFatal("%s is locked!", appName.toStdString().c_str());
-    //m_presentationManager = new presentation::PresentationManager();
+    {
+        QMessageBox::warning(0, appName, appName+tr(" is already running!"));
+        QMetaObject::invokeMethod(qApp, "quit", Qt::QueuedConnection);
+        //qFatal("%s is locked!", appName.toStdString().c_str());
+    }
 }
 
 bool Application::Impl::start()
 {
-//    if (m_presentationManager.isNull())
-//        return false;
-//    m_presentationManager->mainWindow()->show();
     presentationManager->mainWindow()->show();
     return true;
 }

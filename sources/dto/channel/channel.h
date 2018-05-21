@@ -1,7 +1,7 @@
 #ifndef FREQ_GENERATOR_H
 #define FREQ_GENERATOR_H
 
-#include <QtGlobal>
+#include <QMetaType>
 
 namespace dto
 {
@@ -25,5 +25,6 @@ namespace dto
         quint32 m_value = 0;
     };
 }
+Q_DECLARE_METATYPE(dto::Channel*)
 
 #endif // FREQ_GENERATOR_H

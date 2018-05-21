@@ -5,6 +5,7 @@
 
 #include "service_registry.h"
 #include "channel.h"
+#include "command.h"
 #include "da_converter_service.h"
 #include "freq_generator_service.h"
 #include "digital_potentiometer_service.h"
@@ -75,10 +76,12 @@ MainWindow::MainWindow(QWidget *parent) :
     d->transferService = serviceRegistry->transferService();
 
     //===setting ranges/steps for fields===
-    ui->ch1Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
-    ui->ch1Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
-    ui->ch2Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
-    ui->ch2Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
+    //ui->ch1Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
+    //ui->ch1Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
+    //ui->ch2Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
+    //ui->ch2Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
+    ui->ch1Box->setDecimals(4);
+    ui->ch2Box->setDecimals(4);
 
     qreal biasStep = 0.1;
     ui->biasBox->setMaximum(settingsProvider->value(settings::dac::vRef).toDouble());
@@ -87,11 +90,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->biasSlider->setValue(ui->biasSlider->maximum());
 
     qreal gainStep = 1;
-    ui->gainBox->setMaximum(settingsProvider->value(settings::digital_potentiometer::maxVal).toInt());
+    ui->gainBox->setMinimum(settingsProvider->value(settings::digital_potentiometer::minK).toInt());
+    ui->gainBox->setMaximum(settingsProvider->value(settings::digital_potentiometer::maxK).toInt());
     ui->gainBox->setSingleStep(gainStep);
-    ui->gainSlider->setMaximum(settingsProvider->value(settings::digital_potentiometer::maxVal).toInt()/gainStep);
+    ui->gainSlider->setMinimum(settingsProvider->value(settings::digital_potentiometer::minK).toInt()/gainStep);
+    ui->gainSlider->setMaximum(settingsProvider->value(settings::digital_potentiometer::maxK).toInt()/gainStep);
 
+    qreal laserPwrStep = 0.1;
     ui->laserPwrBox->setMaximum(settingsProvider->value(settings::dac::vRef).toDouble());
+    ui->laserPwrBox->setSingleStep(laserPwrStep);
     //========================
 
     //===setting status bar===
@@ -115,7 +122,20 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         connect(chButton, &QPushButton::clicked, this, [chButton, this] ()
         {
-            updateGenerator(d->chButtons.indexOf(chButton), d->chBoxes.at( d->chButtons.indexOf(chButton) )->value());
+            double minFreq = settingsProvider->value(settings::freq_generator::minFrequency).toDouble();
+            double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toInt();
+            double value = d->chBoxes.at( d->chButtons.indexOf(chButton) )->value();
+            if ( value >=
+                    utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex))
+                 && value <= utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex))
+                 )
+                updateGenerator(d->chButtons.indexOf(chButton), d->chBoxes.at(d->chButtons.indexOf(chButton))->value());
+            else
+                QMessageBox::warning(0, qApp->applicationName()+tr(" warning"), tr("Frequency out of range!\nMin value: ")+
+                                     QString::number(utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex)))+
+                                     " "+d->chUnits.at(d->chButtons.indexOf(chButton))->currentText()+tr("\nMax value: ")+
+                                     QString::number(utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex)))+
+                                     " "+d->chUnits.at(d->chButtons.indexOf(chButton))->currentText());
         });
     }
 
@@ -124,23 +144,26 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(chUnit, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [chUnit, this](int index)
         {
             double val = d->chBoxes.at(d->chUnits.indexOf(chUnit))->value();
-            double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toDouble();
+            double minFreq = settingsProvider->value(settings::freq_generator::minFrequency).toDouble();
+            double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toInt();
 
             val = utils::UnitConversion::frequencyConvert(val,::availableUnits.at(d->chUnitCurrentIndex), ::availableUnits.at(index));
+            minFreq = utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(index));
             maxFreq = utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(index));
-            int tempCurr = d->chUnitCurrentIndex;
+            //int tempCurr = d->chUnitCurrentIndex;
             d->chUnitCurrentIndex = index; //change it here for proper generatorUpdate
 
-            if (index<tempCurr)
+            if (settingsProvider->value(settings::freq_generator::autoUnitConversion).toBool())
             {
+                if (::availableUnits.at(d->chUnitCurrentIndex) == dto::Channel::Hz)
+                    d->chBoxes.at(d->chUnits.indexOf(chUnit))->setDecimals(0);
+                else if (::availableUnits.at(d->chUnitCurrentIndex) == dto::Channel::KHz)
+                    d->chBoxes.at(d->chUnits.indexOf(chUnit))->setDecimals(3);
+                else
+                    d->chBoxes.at(d->chUnits.indexOf(chUnit))->setDecimals(4);
+                d->chBoxes.at(d->chUnits.indexOf(chUnit))->setMinimum(minFreq);
                 d->chBoxes.at(d->chUnits.indexOf(chUnit))->setMaximum(maxFreq);
-            }
-
-            d->chBoxes.at(d->chUnits.indexOf(chUnit))->setValue(val);
-
-            if (index>tempCurr)
-            {
-                d->chBoxes.at(d->chUnits.indexOf(chUnit))->setMaximum(maxFreq);
+                d->chBoxes.at(d->chUnits.indexOf(chUnit))->setValue(val);
             }
         });
     }
@@ -177,34 +200,48 @@ MainWindow::MainWindow(QWidget *parent) :
     });
     connect(ui->setGainButton, &QPushButton::clicked, this, [this]()
     {
-        d->digitalPotentiometerService->updatePotentiometer(0, ui->gainBox->value());
+        d->digitalPotentiometerService->updatePotentiometer(0, utils::UnitConversion::kToDAC(ui->gainBox->value()));
     });
 
     connect(ui->setLaserPowButton, &QPushButton::clicked, this, [this]()
     {
         d->daConverterService->updateDAC(1, utils::UnitConversion::voltsToDAC(ui->laserPwrBox->value()));
+        //d = (256*2,667*Plaz)/3.3
     });
 
     Switch* pulseBoostSwitch = new Switch(this);
-    ui->laserGroup->layout()->addWidget(pulseBoostSwitch);
+    QGridLayout* photodetectorLayout = (QGridLayout*) ui->photoDetectorGroup->layout();
+    photodetectorLayout->addWidget(pulseBoostSwitch, 0, 2);
     pulseBoostSwitch->setMaximumWidth(40);
     connect(pulseBoostSwitch, &Switch::toggled, this, [=](bool isOn)
     {
-        if (!d->transferService->transferCommand(domain::TransferService::hv_ctrl, (uint8_t)isOn))
+        dto::Command cmd;
+        cmd.setType(dto::Command::hv_ctrl);
+        cmd.addArgument(isOn);
+        if (!d->transferService->transferCommand(cmd))
             pulseBoostSwitch->setToggle(!isOn);
     });
 
     connect(d->daConverterService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel)
     {
-        d->transferService->transferChannel(domain::TransferService::dac, channel);
+        dto::Command cmd;
+        cmd.setType(dto::Command::dac);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        d->transferService->transferCommand(cmd);
     });
     connect(d->freqGenService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel)
     {
-        d->transferService->transferChannel(domain::TransferService::gen, channel);
+        dto::Command cmd;
+        cmd.setType(dto::Command::gen);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        d->transferService->transferCommand(cmd);
     });
     connect(d->digitalPotentiometerService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel)
     {
-       d->transferService->transferChannel(domain::TransferService::digital_pot, channel);
+        dto::Command cmd;
+        cmd.setType(dto::Command::digital_pot);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        d->transferService->transferCommand(cmd);
     });
 
     connect(ui->measureButton, &QPushButton::clicked, this, &MainWindow::onMeasureClick);
@@ -270,11 +307,13 @@ void MainWindow::onMeasureClick()
     if (!d->transferService->deviceOpened())
     {
         qDebug()<<"Cannot start measure! usb device not opened";
-        QMessageBox::critical(0, "Warning", "Cannot start measure! Device not connected!");
+        QMessageBox::warning(0, qApp->applicationName()+tr(" warning"), tr("Cannot start measure! Device not connected!"));
         return;
     }
 
-    d->transferService->transferCommand(domain::TransferService::startMeasure);
+    dto::Command cmd;
+    cmd.setType(dto::Command::startMeasure);
+    d->transferService->transferCommand(cmd);
     presentationManager->chartWindow()->startReading();
     presentationManager->chartWindow()->show();
 }

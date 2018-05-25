@@ -23,6 +23,7 @@ namespace domain
         bool transferChannel(const dto::Command& command, dto::ChannelPtr channel);
         void getAdcData(QIODevice* device);
         void listenData();
+        void cancelListen();
     signals:
         void hotPlugDeviceLeft();
     private:

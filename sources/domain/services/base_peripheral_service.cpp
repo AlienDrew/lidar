@@ -21,12 +21,12 @@ BasePeripheralService::~BasePeripheralService()
 
 dto::ChannelPtr BasePeripheralService::load(int chId)
 {
-    return channelList.at(chId);
+    return channelList.value(chId, nullptr);
 }
 
 void BasePeripheralService::updateChannel(int chId, quint32 val)
 {
-    dto::ChannelPtr channel = channelList.at(chId);
+    dto::ChannelPtr channel = this->load(chId);
     if (channel.isNull())
     {
         qFatal("error in %s: no such channel", Q_FUNC_INFO);
@@ -39,11 +39,11 @@ void BasePeripheralService::updateChannel(int chId, quint32 val)
 
 void BasePeripheralService::updateChannel(dto::ChannelPtr channel)
 {
-    if (channelList.contains(channel))
+    if (!channelList.contains(channel))
     {
-        channelList[channel->channelId()] = channel;
-        emit chUpdated(channel);
-    }
-    else
         qFatal("error in %s: no such channel", Q_FUNC_INFO);
+        return;
+    }
+    channelList[channel->channelId()] = channel;
+    emit chUpdated(channel);
 }

@@ -16,11 +16,11 @@ namespace presentation
     {
         Q_OBJECT
     public:
-        explicit XYSeriesIODevice(QXYSeries * series, QXYSeries* series2, QObject *parent = 0);
+        explicit XYSeriesIODevice(QXYSeries* series, QXYSeries* series2, QObject *parent = 0);
 
     protected:
-        qint64 readData(char * data, qint64 maxSize) override;
-        qint64 writeData(const char * data, qint64 maxSize) override;
+        qint64 readData(char* data, qint64 maxSize) override;
+        qint64 writeData(const char* data, qint64 maxSize) override;
 
     private:
         QXYSeries* m_series;

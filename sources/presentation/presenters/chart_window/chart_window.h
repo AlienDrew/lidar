@@ -25,6 +25,8 @@ namespace presentation
         void zoomOut();
         void zoomIn();
 
+    protected:
+        void closeEvent(QCloseEvent *event) override;
     private:
         QToolBar* createToolBar();
 

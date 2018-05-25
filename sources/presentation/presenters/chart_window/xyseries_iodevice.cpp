@@ -3,6 +3,7 @@
 #include "settings_provider.h"
 
 #include <QtCharts/QXYSeries>
+#include <QDebug>
 
 using namespace presentation;
 
@@ -38,7 +39,7 @@ qint64 XYSeriesIODevice::readData(char* data, qint64 maxSize)
     return -1;
 }
 
-qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
+qint64 XYSeriesIODevice::writeData(const char* data, qint64 maxSize)
 {
     qint32 fs = settingsProvider->value(settings::adc::samplingFreq).toUInt();
     qint64 indexRange = settingsProvider->value(settings::adc::maxNumberOfSamples).toUInt();
@@ -84,11 +85,21 @@ qint64 XYSeriesIODevice::writeData(const char * data, qint64 maxSize)
 //        uint32_t sample1 = (sample & 0x0FFF0000) >> 16;
 //        points2.append(QPointF(i+size2, sample1));
 //    }
+
+
     for (int i = 0; i<maxSize; i+=4)
     {
-        points.append(QPointF( (qreal)((j++)+size)/fs*1000000, (qreal)(convertFrom8To16(data[i], data[i+1])/settingsProvider->value(settings::adc::maxVal).toUInt())*
+        if ((qreal)(convertFrom8To16(data[i], data[i+1])/settingsProvider->value(settings::adc::maxVal).toReal())*
+                settingsProvider->value(settings::adc::vRef).toReal()>3.3)
+        {
+            qDebug()<<convertFrom8To16(data[i], data[i+1]);
+            qDebug()<<(qreal)(convertFrom8To16(data[i], data[i+1])/settingsProvider->value(settings::adc::maxVal).toReal())*
+                    settingsProvider->value(settings::adc::vRef).toReal();
+        }
+
+        points.append(QPointF( (qreal)((j++)+size)/fs*1000000, (qreal)(convertFrom8To16(data[i], data[i+1])/settingsProvider->value(settings::adc::maxVal).toReal())*
                       settingsProvider->value(settings::adc::vRef).toReal()) );
-        points2.append(QPointF( (qreal)((j2++)+size2)/fs*1000000, (qreal)(convertFrom8To16(data[i+2], data[i+3])/settingsProvider->value(settings::adc::maxVal).toUInt())*
+        points2.append(QPointF( (qreal)((j2++)+size2)/fs*1000000, (qreal)(convertFrom8To16(data[i+2], data[i+3])/settingsProvider->value(settings::adc::maxVal).toReal())*
                 settingsProvider->value(settings::adc::vRef).toReal()) );
     }
 

@@ -4,6 +4,7 @@
 #include "freq_generator_service.h"
 #include "da_converter_service.h"
 #include "digital_potentiometer_service.h"
+#include "command.h"
 
 using namespace utils;
 

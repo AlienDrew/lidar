@@ -26,14 +26,15 @@ public:
     domain::FreqGeneratorService* freqGenService;
     domain::DigitalPotentiometerService* digitalPotentiometerService;
     domain::TransferService* transferService;
-    dto::ChannelPtr channel;
 
     QMap< QString, QAction* > actionMap;
+    //==generator==
     QList<QComboBox*> chUnits;
     QList<QPushButton*> chButtons;
     QList<QDoubleSpinBox*> chBoxes;
+    QList<Switch*> chSwitches;
+    //========
     QLabel* statusIcon;
-    int chUnitCurrentIndex = 0;
 };
 
 namespace
@@ -42,6 +43,7 @@ namespace
     {
         dto::Channel::Hz, dto::Channel::KHz, dto::Channel::MHz
     };
+    const char* prevIndex = "prevIndex";
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -57,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     d->chUnits = {ui->ch1Units, ui->ch2Units};
     d->chBoxes = {ui->ch1Box, ui->ch2Box};
     d->chButtons = {ui->setCh1Button, ui->setCh2Button};
+    d->chSwitches = {new Switch(this), new Switch(this)};
 
     int genChannelAmount = settingsProvider->value(settings::freq_generator::channelCount).toInt();
     if ((d->chUnits.size() != d->chBoxes.size() || d->chBoxes.size() != d->chButtons.size())
@@ -82,6 +85,12 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->ch2Box->setMaximum(settingsProvider->value(settings::freq_generator::maxFrequency).toInt());
     ui->ch1Box->setDecimals(4);
     ui->ch2Box->setDecimals(4);
+    ui->ch1Box->setValue(10);
+    ui->ch2Box->setValue(10.0050);
+    ui->ch1Units->setCurrentIndex(2);
+    ui->ch2Units->setCurrentIndex(2);
+    ui->ch1Units->setProperty(::prevIndex, 2);
+    ui->ch2Units->setProperty(::prevIndex, 2);
 
     qreal biasStep = 0.1;
     ui->biasBox->setMaximum(settingsProvider->value(settings::dac::vRef).toDouble());
@@ -118,24 +127,47 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     });
 
+    //=====generator=====
+    QGridLayout* generatorLayout = (QGridLayout*) ui->generatorGroup->layout();
+    generatorLayout->addWidget(d->chSwitches.at(0), 0, 2, Qt::AlignRight);
+    generatorLayout->addWidget(d->chSwitches.at(1), 3, 2, Qt::AlignRight);
+    for (Switch* chSwitch : d->chSwitches)
+    {
+        chSwitch->setMaximumWidth(40);
+        chSwitch->setMaximumWidth(40);
+        connect(chSwitch, &Switch::toggled, this, [=](bool isOn)
+        {
+            dto::Command cmd;
+            cmd.setType(dto::Command::gen_channel_switch);
+            cmd.addArgument(d->chSwitches.indexOf(chSwitch));
+            cmd.addArgument(isOn);
+            if (!d->transferService->transferCommand(cmd))
+                chSwitch->setToggle(!isOn);
+        });
+    }
+
     for (QPushButton* chButton : d->chButtons)
     {
         connect(chButton, &QPushButton::clicked, this, [chButton, this] ()
         {
-            double minFreq = settingsProvider->value(settings::freq_generator::minFrequency).toDouble();
-            double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toInt();
-            double value = d->chBoxes.at( d->chButtons.indexOf(chButton) )->value();
+            int chId = d->chButtons.indexOf(chButton);
+            qreal minFreq = settingsProvider->value(settings::freq_generator::minFrequency).toDouble();
+            qreal maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toInt();
+            qreal value = d->chBoxes.at(chId)->value();
             if ( value >=
-                    utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex))
-                 && value <= utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex))
+                    utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnits.at(chId)->currentIndex()))
+                 && value <= utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnits.at(chId)->currentIndex()))
                  )
-                updateGenerator(d->chButtons.indexOf(chButton), d->chBoxes.at(d->chButtons.indexOf(chButton))->value());
+                d->freqGenService->updateGenerator(chId,
+                                                   utils::UnitConversion::frequencyConvert(value,
+                                                                                           ::availableUnits.value(d->chUnits.at(chId)->currentIndex()),
+                                                                                           dto::Channel::Hz));
             else
                 QMessageBox::warning(0, qApp->applicationName()+tr(" warning"), tr("Frequency out of range!\nMin value: ")+
-                                     QString::number(utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex)))+
-                                     " "+d->chUnits.at(d->chButtons.indexOf(chButton))->currentText()+tr("\nMax value: ")+
-                                     QString::number(utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnitCurrentIndex)))+
-                                     " "+d->chUnits.at(d->chButtons.indexOf(chButton))->currentText());
+                                     QString::number(utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnits.at(chId)->currentIndex())))+
+                                     " "+d->chUnits.at(chId)->currentText()+tr("\nMax value: ")+
+                                     QString::number(utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(d->chUnits.at(chId)->currentIndex())))+
+                                     " "+d->chUnits.at(chId)->currentText());
         });
     }
 
@@ -143,21 +175,21 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         connect(chUnit, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [chUnit, this](int index)
         {
-            double val = d->chBoxes.at(d->chUnits.indexOf(chUnit))->value();
-            double minFreq = settingsProvider->value(settings::freq_generator::minFrequency).toDouble();
-            double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toInt();
-
-            val = utils::UnitConversion::frequencyConvert(val,::availableUnits.at(d->chUnitCurrentIndex), ::availableUnits.at(index));
-            minFreq = utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(index));
-            maxFreq = utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(index));
-            //int tempCurr = d->chUnitCurrentIndex;
-            d->chUnitCurrentIndex = index; //change it here for proper generatorUpdate
-
             if (settingsProvider->value(settings::freq_generator::autoUnitConversion).toBool())
             {
-                if (::availableUnits.at(d->chUnitCurrentIndex) == dto::Channel::Hz)
+                int chId = d->chUnits.indexOf(chUnit);
+                double val = d->chBoxes.at(chId)->value();
+                double minFreq = settingsProvider->value(settings::freq_generator::minFrequency).toDouble();
+                double maxFreq = settingsProvider->value(settings::freq_generator::maxFrequency).toInt();
+
+                val = utils::UnitConversion::frequencyConvert(val, ::availableUnits.at(chUnit->property(::prevIndex).toInt()), ::availableUnits.at(index));
+                minFreq = utils::UnitConversion::frequencyConvert(minFreq, dto::Channel::Hz, ::availableUnits.at(index));
+                maxFreq = utils::UnitConversion::frequencyConvert(maxFreq, dto::Channel::Hz, ::availableUnits.at(index));
+                chUnit->setProperty(::prevIndex, index); //change it here for proper generatorUpdate
+
+                if (::availableUnits.at(index) == dto::Channel::Hz)
                     d->chBoxes.at(d->chUnits.indexOf(chUnit))->setDecimals(0);
-                else if (::availableUnits.at(d->chUnitCurrentIndex) == dto::Channel::KHz)
+                else if (::availableUnits.at(index) == dto::Channel::KHz)
                     d->chBoxes.at(d->chUnits.indexOf(chUnit))->setDecimals(3);
                 else
                     d->chBoxes.at(d->chUnits.indexOf(chUnit))->setDecimals(4);
@@ -167,7 +199,7 @@ MainWindow::MainWindow(QWidget *parent) :
             }
         });
     }
-
+    //================================
 
     connect(ui->biasSlider, &QSlider::valueChanged, this, [biasStep, this](int value)
     {
@@ -291,22 +323,10 @@ void MainWindow::updateStatusBar()
     }
 }
 
-void MainWindow::updateGenerator(int chId, double value)
-{
-    //d->freqGenService->update(d->chBoxes.indexOf(chBox), value);
-    d->channel = d->freqGenService->load(chId);
-    //convert to Hz before set
-    quint32 HzValue = utils::UnitConversion::frequencyConvert(value, ::availableUnits.value(d->chUnitCurrentIndex), dto::Channel::Hz);
-    qDebug()<<"channel ID:"<<chId+1<<"displayed val: "<<value<<"in Hz: "<<HzValue;
-    d->channel->setValue(HzValue);
-    d->freqGenService->updateGenerator(d->channel);
-}
-
 void MainWindow::onMeasureClick()
 {
     if (!d->transferService->deviceOpened())
     {
-        qDebug()<<"Cannot start measure! usb device not opened";
         QMessageBox::warning(0, qApp->applicationName()+tr(" warning"), tr("Cannot start measure! Device not connected!"));
         return;
     }

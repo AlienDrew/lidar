@@ -106,6 +106,11 @@ void TransferService::getAdcData(QIODevice* device)
 
 void TransferService::listenData()
 {
-    d->usb->asyncBulkReadTransfer();
-    connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
+//    d->usb->asyncBulkReadTransfer();
+    //    connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
+}
+
+void TransferService::cancelListen()
+{
+    d->usb->cancelAsynchBulkReadTransfer();
 }

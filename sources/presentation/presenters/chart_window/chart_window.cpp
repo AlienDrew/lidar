@@ -75,10 +75,10 @@ ChartWindow::ChartWindow(QWidget *parent) :
     QValueAxis* axisX2 = new QValueAxis(this);
     axisX2->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
     axisX2->setLabelFormat("%g");
-    axisX2->setTitleText("Samples");
+    axisX2->setTitleText("Time, us");
     QValueAxis* axisY2 = new QValueAxis(this);
     axisY2->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
-    axisY2->setTitleText("Value level");
+    axisY2->setTitleText("Voltage, V");
 
     d->chart->setAxisX(axisX, d->series);
     d->chart->setAxisY(axisY, d->series);
@@ -157,6 +157,12 @@ void ChartWindow::zoomIn()
 {
     //d->chart->zoomIn(QRectF());
     d->chart->zoomIn();
+}
+
+void ChartWindow::closeEvent(QCloseEvent* event)
+{
+    //d->transferService->cancelListen();
+    event->accept();
 }
 
 QToolBar*ChartWindow::createToolBar()

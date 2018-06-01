@@ -249,9 +249,6 @@ bool USB::bulkWriteTransfer(QByteArray& data)
     int status;
     int transferred = 0;
 
-    uint8_t actualSize = data.size();
-    data.prepend(actualSize);
-
     status = libusb_interrupt_transfer(d->handle, USB_ENDPOINT_OUT, (unsigned char*)data.data(), packetSize(), &transferred, 0);
     //status = libusb_interrupt_transfer(d->handle, 0x01, (unsigned char*)data.data(), actual, &transferred, 0);
 

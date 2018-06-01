@@ -14,6 +14,7 @@
 #include <QtCharts/QChartGlobal>
 #include <QtWidgets/QVBoxLayout>
 #include <QToolBar>
+#include <QFileDialog>
 #include <QDebug>
 
 using namespace presentation;
@@ -24,13 +25,18 @@ class ChartWindow::Impl
 public:
     QChart* chart;
     ChartView* chartView;
-    QLineSeries* series;
+    QLineSeries* series = nullptr;
 
     QChart* chart2;
     ChartView* chartView2;
-    QLineSeries* ch2Series;
+    QLineSeries* ch2Series = nullptr;
 
-    XYSeriesIODevice* device;
+    QValueAxis* axisX;
+    QValueAxis* axisY;
+    QValueAxis* axisX2;
+    QValueAxis* axisY2;
+
+    XYSeriesIODevice* device = nullptr;
     domain::TransferService* transferService;
 
     QPoint mousePos;
@@ -47,44 +53,33 @@ ChartWindow::ChartWindow(QWidget *parent) :
     d->chartView = new ChartView(d->chart);
     //d->chartView->setRubberBand(QChartView::RectangleRubberBand);
     d->chartView->setMinimumSize(1000, 400);
-    d->series = new QLineSeries;
-    d->series->setName(tr("Channel A"));
-    d->series->setPen(QPen(QBrush(Qt::red), 2));
-    d->series->setUseOpenGL(true);
-    d->chart->addSeries(d->series);
-
 
     d->chart2 = new QChart();
     d->chartView2 = new ChartView(d->chart2);
     //d->chartView2->setRubberBand(QChartView::RectangleRubberBand);
     d->chartView2->setMinimumSize(1000, 400);
-    d->ch2Series = new QLineSeries;
-    d->ch2Series->setName(tr("Channel B"));
-    d->ch2Series->setPen(QPen(QBrush(Qt::blue), 2));
-    d->ch2Series->setUseOpenGL(true);
-    d->chart2->addSeries(d->ch2Series);
 
-    QValueAxis* axisX = new QValueAxis(this);
-    axisX->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
-    axisX->setLabelFormat("%g");
-    axisX->setTitleText("Time, us");
-    QValueAxis* axisY = new QValueAxis(this);
-    axisY->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
-    axisY->setTitleText("Voltage, V");
+    d->axisX = new QValueAxis(this);
+    d->axisX->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
+    d->axisX->setLabelFormat("%g");
+    d->axisX->setTitleText("Time, us");
+    d->axisY = new QValueAxis(this);
+    d->axisY->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
+    d->axisY->setTitleText("Voltage, V");
 
-    QValueAxis* axisX2 = new QValueAxis(this);
-    axisX2->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
-    axisX2->setLabelFormat("%g");
-    axisX2->setTitleText("Time, us");
-    QValueAxis* axisY2 = new QValueAxis(this);
-    axisY2->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
-    axisY2->setTitleText("Voltage, V");
+    d->axisX2 = new QValueAxis(this);
+    d->axisX2->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
+    d->axisX2->setLabelFormat("%g");
+    d->axisX2->setTitleText("Time, us");
+    d->axisY2 = new QValueAxis(this);
+    d->axisY2->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
+    d->axisY2->setTitleText("Voltage, V");
 
-    d->chart->setAxisX(axisX, d->series);
-    d->chart->setAxisY(axisY, d->series);
+//    d->chart->setAxisX(axisX, d->series);
+//    d->chart->setAxisY(axisY, d->series);
 
-    d->chart2->setAxisX(axisX2, d->ch2Series);
-    d->chart2->setAxisY(axisY2, d->ch2Series);
+//    d->chart2->setAxisX(axisX2, d->ch2Series);
+//    d->chart2->setAxisY(axisY2, d->ch2Series);
 
     //d->chart->legend()->hide();
     d->chart->setTitle("Data from ADC1");
@@ -98,7 +93,11 @@ ChartWindow::ChartWindow(QWidget *parent) :
     mainLayout->addWidget(d->chartView2);
 
     d->transferService = serviceRegistry->transferService();
-    d->device = new XYSeriesIODevice(d->series, d->ch2Series, this);
+    //d->device = new XYSeriesIODevice(d->series, d->ch2Series, this);
+
+    QPushButton* saveDataButton = new QPushButton("Save data", this);
+    connect(saveDataButton, &QPushButton::clicked, this, &ChartWindow::saveData);
+    mainLayout->addWidget(saveDataButton);
 }
 
 ChartWindow::~ChartWindow()
@@ -113,20 +112,90 @@ ChartWindow::~ChartWindow()
     qDebug()<<"chart window destroyed";
 }
 
-void ChartWindow::clearChart()
+void ChartWindow::initCharts()
 {
-    d->series->clear();
-    d->ch2Series->clear();
-    d->series->pointsVector().clear();
-    d->ch2Series->pointsVector().clear();
-    //d->chart->removeAllSeries();
+    if (d->device)
+    {
+        d->device->close();
+        //delete d->device;
+    }
+    resetZoom();
+    auto slist = d->chart->series();
+    if (!slist.isEmpty())
+    {
+        QLineSeries* old_series = dynamic_cast<QLineSeries*>(slist.at(0));
+        old_series->detachAxis(d->axisX);
+        old_series->detachAxis(d->axisY);
+        d->chart->removeAxis(d->axisX);
+        d->chart->removeAxis(d->axisY);
+        d->chart->removeSeries(old_series);
+    }
+    slist = d->chart2->series();
+    if (!slist.isEmpty())
+    {
+        QLineSeries* old_series = dynamic_cast<QLineSeries*>(slist.at(0));
+        old_series->detachAxis(d->axisX2);
+        old_series->detachAxis(d->axisY2);
+        d->chart2->removeAxis(d->axisX2);
+        d->chart2->removeAxis(d->axisY2);
+        d->chart2->removeSeries(old_series);
+    }
+
+    d->series = new QLineSeries;
+    d->series->setName(tr("Channel A"));
+    d->series->setPen(QPen(QBrush(Qt::red), 2));
+    d->series->setUseOpenGL(true);
+    d->chart->addSeries(d->series);
+
+    d->ch2Series = new QLineSeries;
+    d->ch2Series->setName(tr("Channel B"));
+    d->ch2Series->setPen(QPen(QBrush(Qt::blue), 2));
+    d->ch2Series->setUseOpenGL(true);
+    d->chart2->addSeries(d->ch2Series);
+
+    d->chart->setAxisX(d->axisX, d->series);
+    d->chart->setAxisY(d->axisY, d->series);
+
+    d->chart2->setAxisX(d->axisX2, d->ch2Series);
+    d->chart2->setAxisY(d->axisY2, d->ch2Series);
+    d->device = new XYSeriesIODevice(d->series, d->ch2Series, this);
 }
 
 void ChartWindow::startReading()
 {
-    clearChart();
+    initCharts();
     d->device->open(QIODevice::WriteOnly);
-    d->transferService->getAdcData(d->device);
+    d->transferService->setADCXYIODevice(d->device);
+}
+
+void ChartWindow::saveData()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save ADC data"), "",
+                                                    tr("ADC data (*.txt);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+    else
+    {
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            QMessageBox::information(this, tr("Unable to open file"),
+                                     file.errorString());
+            return;
+        }
+        QDataStream out(&file);
+        out.setVersion(QDataStream::Qt_5_10);
+        QVector<QPointF> seriesCh1 = d->series->pointsVector();
+        QVector<QPointF> seriesCh2 = d->ch2Series->pointsVector();
+        out<<"ch 1"<<"\n";
+        for (int i = 0; i<seriesCh1.size(); ++i)
+            out<<QString::number(seriesCh1[i].x())<<" "<<QString::number(seriesCh1[i].y())<<"\n";
+        out<<"\n"<<"ch 2"<<"\n";
+        for (int i = 0; i<seriesCh2.size(); ++i)
+            out<<QString::number(seriesCh2[i].x())<<" "<<QString::number(seriesCh2[i].y())<<"\n";
+        QMessageBox::information(this, qApp->applicationName(), tr("Data written to file!"));
+    }
 }
 
 void ChartWindow::drag(bool checked)
@@ -146,22 +215,26 @@ void ChartWindow::drag(bool checked)
 void ChartWindow::resetZoom()
 {
     d->chart->zoomReset();
+    d->chart2->zoomReset();
 }
 
 void ChartWindow::zoomOut()
 {
     d->chart->zoomOut();
+    d->chart2->zoomOut();
 }
 
 void ChartWindow::zoomIn()
 {
     //d->chart->zoomIn(QRectF());
     d->chart->zoomIn();
+    d->chart2->zoomIn();
 }
 
 void ChartWindow::closeEvent(QCloseEvent* event)
 {
-    //d->transferService->cancelListen();
+    resetZoom();
+    d->device->close();
     event->accept();
 }
 

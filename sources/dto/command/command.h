@@ -18,9 +18,11 @@ namespace dto
             digital_pot,
             usb_connected,
             usb_disconnected,
+
             gen_channel_switch,
             temp_sensor_received,
-            telemetry_received
+            telemetry_received,
+            adc_data
         };
         CommandType type() const;
         void setType(CommandType type);

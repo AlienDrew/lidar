@@ -29,13 +29,13 @@ namespace
         //internal stm32 adc used
         {adc::maxVal, 4095},
         {adc::vRef, 3.3},
-        {adc::samplingFreq, 50000},
+        {adc::samplingFreq, 500000},
         {adc::maxNumberOfSamples, 1024},
 
         //custom HID device
         {communication::usb::VID, 1155},
         {communication::usb::PID, 22352},
-        {communication::usb::packetSize, 64}
+        {communication::usb::packetSize, 64},
     };
 }
 

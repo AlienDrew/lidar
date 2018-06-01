@@ -3,6 +3,8 @@
 
 #include <QObject>
 
+class QIODevice;
+
 namespace utils
 {
     class DataParser : public QObject
@@ -11,6 +13,7 @@ namespace utils
     public:
         DataParser(QObject* parent = nullptr);
         void parse(QByteArray data);
+        void setXYIODevice(QIODevice* device);
         ~DataParser() override;
     private:
         class Impl;

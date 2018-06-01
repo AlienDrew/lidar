@@ -2,8 +2,11 @@
 
 #include "channel.h"
 #include "command.h"
+#include "communication_interface.h"
+#include "mcu_emulator_communication.h"
 #include "usb.h"
 #include "data_parser.h"
+#include "settings_provider.h"
 
 #include <QDataStream>
 #include <QVector>
@@ -15,6 +18,7 @@ using namespace domain;
 class TransferService::Impl
 {
 public:
+    communication::MCUEmulatorCommunication* emulator = nullptr;
     communication::USB* usb = nullptr;
     utils::DataParser* dataParser = nullptr;
 };
@@ -22,6 +26,7 @@ public:
 TransferService::TransferService() : d(new Impl)
 {
     d->usb = new communication::USB();
+    d->emulator = new communication::MCUEmulatorCommunication();
     connect(d->usb, &communication::USB::deviceDisconnected, this, &TransferService::closeDevice); //hotPlug disconnect
     connect(d->usb, &communication::USB::deviceDisconnected, this, &TransferService::hotPlugDeviceLeft); //hotPlug disconnect
     //d->usb->initialize();
@@ -32,18 +37,22 @@ TransferService::TransferService() : d(new Impl)
 TransferService::~TransferService()
 {
     d->usb->close();
+    d->emulator->close();
     delete d->usb;
+    delete d->emulator;
 }
 
 bool TransferService::openDevice()
 {
     d->usb->initialize();
     d->usb->open();
+    if (!d->usb->isOpened())
+        d->emulator->open();
     dto::Command cmd;
     cmd.setType(dto::Command::usb_connected);
     transferCommand(cmd);
     listenData();
-    return d->usb->isOpened();
+    return d->usb->isOpened() || d->emulator->isOpen();
 }
 
 void TransferService::closeDevice()
@@ -52,11 +61,16 @@ void TransferService::closeDevice()
     cmd.setType(dto::Command::usb_disconnected);
     transferCommand(cmd);
     d->usb->close();
+    d->emulator->close();
 }
 
 bool TransferService::deviceOpened() const
 {
-    return d->usb->isOpened();
+    if (d->usb->isOpened())
+        return d->usb->isOpened();
+    if (d->emulator->isOpen())
+        return d->emulator->isOpen();
+    return false;
 }
 
 bool TransferService::transferCommand(const dto::Command& command)
@@ -79,7 +93,11 @@ bool TransferService::transferCommand(const dto::Command& command)
                 stream<<(uint8_t)argument.toUInt();
         }
     }
-    return d->usb->bulkWriteTransfer(data);
+    if (d->usb->isOpened())
+        return d->usb->bulkWriteTransfer(data);
+    if (d->emulator->isOpen())
+        return d->emulator->write(data);
+    return false;
 }
 
 bool TransferService::transferChannel(const dto::Command& command, dto::ChannelPtr channel)
@@ -92,25 +110,56 @@ bool TransferService::transferChannel(const dto::Command& command, dto::ChannelP
     uint32_t f = channel->value();
     data.append(reinterpret_cast<const char*>(&f), sizeof(f)); //4 bytes
     //d->communicationInterface->write(data);
-    return d->usb->bulkWriteTransfer(data);
+    if (d->usb->isOpened())
+        return d->usb->bulkWriteTransfer(data);
+    if (d->emulator->isOpen())
+        return d->emulator->write(data);
+    return false;
 }
 
-void TransferService::getAdcData(QIODevice* device)
+//void TransferService::getAdcData(QIODevice* device)
+//{
+//    if(d->usb->isOpened())
+//    {
+//        d->usb->asyncBulkReadTransfer();
+//        connect(d->usb, &communication::USB::readyRead, this, [=](QByteArray data)
+//        {
+//            if (device->isOpen())
+//                device->write(data);
+//        });
+//    }
+//    else if (d->emulator->isOpen())
+//    {
+//        connect(d->emulator, &communication::CommunicationInterface::readyRead, this, [=](QByteArray data)
+//        {
+//            if (device->isOpen())
+//                device->write(data);
+//        });
+//        d->emulator->read();
+//    }
+//}
+
+void TransferService::setADCXYIODevice(QIODevice* device)
 {
-    d->usb->asyncBulkReadTransfer();
-    connect(d->usb, &communication::USB::readyRead, this, [=](QByteArray data)
-    {
-        device->write(data);
-    });
+    d->dataParser->setXYIODevice(device);
 }
 
 void TransferService::listenData()
 {
-//    d->usb->asyncBulkReadTransfer();
-    //    connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
+    if (d->usb->isOpened())
+    {
+        connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
+        d->usb->asyncBulkReadTransfer();
+    }
+    else if (d->emulator->isOpen())
+    {
+        connect(d->emulator, &communication::CommunicationInterface::readyRead, d->dataParser, &utils::DataParser::parse);
+        d->emulator->read();
+    }
 }
 
 void TransferService::cancelListen()
 {
     d->usb->cancelAsynchBulkReadTransfer();
+    d->emulator->cancelRead();
 }

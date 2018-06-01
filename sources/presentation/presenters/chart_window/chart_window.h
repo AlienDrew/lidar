@@ -16,10 +16,12 @@ namespace presentation
     public:
         explicit ChartWindow(QWidget *parent = 0);
         ~ChartWindow();
-        void clearChart();
+        void initCharts();
         void startReading();
 
     private slots:
+        void saveData();
+
         void drag(bool checked);
         void resetZoom();
         void zoomOut();

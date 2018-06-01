@@ -86,7 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ch1Box->setDecimals(4);
     ui->ch2Box->setDecimals(4);
     ui->ch1Box->setValue(10);
-    ui->ch2Box->setValue(10.0050);
+    ui->ch2Box->setValue(10.0500);
     ui->ch1Units->setCurrentIndex(2);
     ui->ch2Units->setCurrentIndex(2);
     ui->ch1Units->setProperty(::prevIndex, 2);
@@ -336,6 +336,7 @@ void MainWindow::onMeasureClick()
     d->transferService->transferCommand(cmd);
     presentationManager->chartWindow()->startReading();
     presentationManager->chartWindow()->show();
+    presentationManager->chartWindow()->activateWindow();
 }
 
 void MainWindow::initToolBar()

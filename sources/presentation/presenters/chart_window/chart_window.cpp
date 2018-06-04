@@ -42,6 +42,27 @@ public:
     QPoint mousePos;
 };
 
+namespace
+{
+    bool compareMaxX(const QPointF& a, const QPointF& b)
+    {
+        return a.x()<b.x();
+    }
+    bool compareMinX(const QPointF& a, const QPointF& b)
+    {
+        return a.x()>b.x();
+    }
+
+    bool compareMaxY(const QPointF& a, const QPointF& b)
+    {
+        return a.y()<b.y();
+    }
+    bool compareMinY(const QPointF& a, const QPointF& b)
+    {
+        return a.y()>b.y();
+    }
+}
+
 ChartWindow::ChartWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ChartWindow), d(new Impl)
@@ -50,54 +71,43 @@ ChartWindow::ChartWindow(QWidget *parent) :
     addToolBar(Qt::TopToolBarArea, createToolBar());
 
     d->chart = new QChart();
-    d->chartView = new ChartView(d->chart);
-    //d->chartView->setRubberBand(QChartView::RectangleRubberBand);
+    d->chart2 = new QChart();
+    d->chartView = new ChartView(d->chart, d->chart2);
     d->chartView->setMinimumSize(1000, 400);
 
-    d->chart2 = new QChart();
-    d->chartView2 = new ChartView(d->chart2);
-    //d->chartView2->setRubberBand(QChartView::RectangleRubberBand);
+    d->chartView2 = new ChartView(d->chart2, d->chart);
     d->chartView2->setMinimumSize(1000, 400);
 
     d->axisX = new QValueAxis(this);
     d->axisX->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
+    d->axisX->setMax(settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
     d->axisX->setLabelFormat("%g");
     d->axisX->setTitleText("Time, us");
     d->axisY = new QValueAxis(this);
     d->axisY->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
+    d->axisY->setMax(settingsProvider->value(settings::adc::vRef).toReal());
     d->axisY->setTitleText("Voltage, V");
 
     d->axisX2 = new QValueAxis(this);
     d->axisX2->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
+    d->axisX2->setMax(settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);
     d->axisX2->setLabelFormat("%g");
     d->axisX2->setTitleText("Time, us");
     d->axisY2 = new QValueAxis(this);
     d->axisY2->setRange(0, settingsProvider->value(settings::adc::vRef).toReal());
+    d->axisY2->setMax(settingsProvider->value(settings::adc::vRef).toReal());
     d->axisY2->setTitleText("Voltage, V");
-
-//    d->chart->setAxisX(axisX, d->series);
-//    d->chart->setAxisY(axisY, d->series);
-
-//    d->chart2->setAxisX(axisX2, d->ch2Series);
-//    d->chart2->setAxisY(axisY2, d->ch2Series);
 
     //d->chart->legend()->hide();
     d->chart->setTitle("Data from ADC1");
     d->chart2->setTitle("Data from ADC2");
 
-    d->chartView->setRenderHint(QPainter::Antialiasing);
-    d->chartView->setRenderHint(QPainter::Antialiasing);
     QVBoxLayout* mainLayout = new QVBoxLayout(ui->centralwidget);
-
     mainLayout->addWidget(d->chartView);
     mainLayout->addWidget(d->chartView2);
 
     d->transferService = serviceRegistry->transferService();
     //d->device = new XYSeriesIODevice(d->series, d->ch2Series, this);
-
-    QPushButton* saveDataButton = new QPushButton("Save data", this);
-    connect(saveDataButton, &QPushButton::clicked, this, &ChartWindow::saveData);
-    mainLayout->addWidget(saveDataButton);
 }
 
 ChartWindow::~ChartWindow()
@@ -119,7 +129,6 @@ void ChartWindow::initCharts()
         d->device->close();
         //delete d->device;
     }
-    resetZoom();
     auto slist = d->chart->series();
     if (!slist.isEmpty())
     {
@@ -142,15 +151,17 @@ void ChartWindow::initCharts()
     }
 
     d->series = new QLineSeries;
-    d->series->setName(tr("Channel A"));
-    d->series->setPen(QPen(QBrush(Qt::red), 2));
-    d->series->setUseOpenGL(true);
+    d->series->setName(tr("Reference signal"));
+    d->series->setColor(Qt::red);
+    d->series->setPen(QPen(Qt::red, 2));
+    d->series->setPointsVisible();
     d->chart->addSeries(d->series);
 
     d->ch2Series = new QLineSeries;
-    d->ch2Series->setName(tr("Channel B"));
-    d->ch2Series->setPen(QPen(QBrush(Qt::blue), 2));
-    d->ch2Series->setUseOpenGL(true);
+    d->ch2Series->setName(tr("Measured signal"));
+    d->ch2Series->setColor(Qt::darkBlue);
+    d->ch2Series->setPen(QPen(Qt::darkBlue, 2));
+    d->ch2Series->setPointsVisible();
     d->chart2->addSeries(d->ch2Series);
 
     d->chart->setAxisX(d->axisX, d->series);
@@ -158,6 +169,29 @@ void ChartWindow::initCharts()
 
     d->chart2->setAxisX(d->axisX2, d->ch2Series);
     d->chart2->setAxisY(d->axisY2, d->ch2Series);
+
+    connect(d->series, &QLineSeries::pointsReplaced, this, [this]()
+    {
+        if (!d->series->pointsVector().isEmpty())
+        {
+            QPointF minPointY = (*std::max_element(d->series->pointsVector().constBegin(), d->series->pointsVector().constEnd(), compareMinY));
+            QPointF maxPointY = (*std::max_element(d->series->pointsVector().constBegin(), d->series->pointsVector().constEnd(), compareMaxY));
+            d->chart->axisY()->setRange(minPointY.y()-minPointY.y()/8, maxPointY.y()+minPointY.y()/8);
+            d->chart->axisX()->setRange(50, 160);
+        }
+    });
+    connect(d->ch2Series, &QLineSeries::pointsReplaced, this, [this]()
+    {
+        if (!d->ch2Series->pointsVector().isEmpty())
+        {
+            QPointF minPointY = (*std::max_element(d->ch2Series->pointsVector().constBegin(), d->ch2Series->pointsVector().constEnd(), compareMinY));
+            QPointF maxPointY = (*std::max_element(d->ch2Series->pointsVector().constBegin(), d->ch2Series->pointsVector().constEnd(), compareMaxY));
+            d->chart2->axisY()->setRange(minPointY.y()-minPointY.y()/8, maxPointY.y()+minPointY.y()/8);
+            d->chart2->axisX()->setRange(50, 160);
+        }
+    });
+    resetZoom();
+
     d->device = new XYSeriesIODevice(d->series, d->ch2Series, this);
 }
 
@@ -201,21 +235,27 @@ void ChartWindow::saveData()
 void ChartWindow::drag(bool checked)
 {
     if (checked)
-        this->installEventFilter(d->chartView);
+    {
+        d->chartView->setCursor(QCursor(Qt::OpenHandCursor));
+        d->chartView2->setCursor(QCursor(Qt::OpenHandCursor));
+    }
     else
-        this->removeEventFilter(d->chartView);
-
-//    connect(d->chartView, &ChartView::mousePosChanged, this, [=](QPoint pos)
-//    {
-//        d->chart->mapToValue(pos);
-//    });
-    //d->chart->scroll(20.0, 0);
+    {
+        d->chartView->setCursor(QCursor(Qt::ArrowCursor));
+        d->chartView2->setCursor(QCursor(Qt::ArrowCursor));
+    }
+    d->chartView->setDragable(checked);
+    d->chartView2->setDragable(checked);
 }
 
 void ChartWindow::resetZoom()
 {
     d->chart->zoomReset();
     d->chart2->zoomReset();
+
+    //reset scale
+    emit d->series->pointsReplaced();
+    emit d->ch2Series->pointsReplaced();
 }
 
 void ChartWindow::zoomOut()
@@ -226,7 +266,6 @@ void ChartWindow::zoomOut()
 
 void ChartWindow::zoomIn()
 {
-    //d->chart->zoomIn(QRectF());
     d->chart->zoomIn();
     d->chart2->zoomIn();
 }
@@ -246,5 +285,7 @@ QToolBar*ChartWindow::createToolBar()
     ptb->addAction(QIcon(":/icons/reset_zoom.png"), "reset zoom", this, SLOT(resetZoom()));
     ptb->addAction(QIcon(":/icons/zoom_out.png"), "zoom out", this, SLOT(zoomOut()));
     ptb->addAction(QIcon(":/icons/zoom_in.png"), "zoom in", this, SLOT(zoomIn()));
+    ptb->addSeparator();
+    ptb->addAction(QIcon(":/icons/save.png"), "save data", this, SLOT(saveData()));
     return ptb;
 }

@@ -21,7 +21,6 @@ namespace domain
     public slots:
         bool transferCommand(const dto::Command& command);
         bool transferChannel(const dto::Command& command, dto::ChannelPtr channel);
-        //void getAdcData(QIODevice* device);
         void setADCXYIODevice(QIODevice* device);
         void listenData();
         void cancelListen();

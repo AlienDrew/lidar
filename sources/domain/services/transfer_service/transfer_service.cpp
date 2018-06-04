@@ -32,6 +32,8 @@ TransferService::TransferService() : d(new Impl)
     //d->usb->initialize();
     //d->usb->open();
     d->dataParser = new utils::DataParser(this);
+    connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
+    connect(d->emulator, &communication::CommunicationInterface::readyRead, d->dataParser, &utils::DataParser::parse);
 }
 
 TransferService::~TransferService()
@@ -60,6 +62,7 @@ void TransferService::closeDevice()
     dto::Command cmd;
     cmd.setType(dto::Command::usb_disconnected);
     transferCommand(cmd);
+    cancelListen();
     d->usb->close();
     d->emulator->close();
 }
@@ -117,28 +120,6 @@ bool TransferService::transferChannel(const dto::Command& command, dto::ChannelP
     return false;
 }
 
-//void TransferService::getAdcData(QIODevice* device)
-//{
-//    if(d->usb->isOpened())
-//    {
-//        d->usb->asyncBulkReadTransfer();
-//        connect(d->usb, &communication::USB::readyRead, this, [=](QByteArray data)
-//        {
-//            if (device->isOpen())
-//                device->write(data);
-//        });
-//    }
-//    else if (d->emulator->isOpen())
-//    {
-//        connect(d->emulator, &communication::CommunicationInterface::readyRead, this, [=](QByteArray data)
-//        {
-//            if (device->isOpen())
-//                device->write(data);
-//        });
-//        d->emulator->read();
-//    }
-//}
-
 void TransferService::setADCXYIODevice(QIODevice* device)
 {
     d->dataParser->setXYIODevice(device);
@@ -148,12 +129,10 @@ void TransferService::listenData()
 {
     if (d->usb->isOpened())
     {
-        connect(d->usb, &communication::USB::readyRead, d->dataParser, &utils::DataParser::parse);
         d->usb->asyncBulkReadTransfer();
     }
     else if (d->emulator->isOpen())
     {
-        connect(d->emulator, &communication::CommunicationInterface::readyRead, d->dataParser, &utils::DataParser::parse);
         d->emulator->read();
     }
 }

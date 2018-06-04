@@ -33,6 +33,12 @@ namespace settings
         const QString samplingFreq = "ADC/sampling_freq";
         const QString maxNumberOfSamples = "ADC/max_num_of_samples";
     }
+    namespace temp_sensor
+    {
+        const QString channelCount = "TEMPSENSOR/channel_count";
+        const QString maxTemp = "TEMPSENSOR/max_temp";
+        const QString minTemp = "TEMPSENSOR/min_temp";
+    }
     namespace communication
     {
         namespace usb

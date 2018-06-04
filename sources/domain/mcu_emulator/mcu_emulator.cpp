@@ -111,6 +111,7 @@ void MCUEmulator::sendTemperature()
 {
     QByteArray data;
     data.append(dto::Command::temp_sensor_received);
+    data.append(0b00011001);
     //add temp data
     emit readyRead(data);
 }

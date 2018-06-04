@@ -16,7 +16,7 @@ BasePeripheralService::BasePeripheralService(int channelCount, QObject* parent) 
 
 BasePeripheralService::~BasePeripheralService()
 {
-
+    channelList.clear();
 }
 
 dto::ChannelPtr BasePeripheralService::load(int chId)

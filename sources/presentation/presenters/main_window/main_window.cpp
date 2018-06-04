@@ -9,6 +9,7 @@
 #include "da_converter_service.h"
 #include "freq_generator_service.h"
 #include "digital_potentiometer_service.h"
+#include "temperature_service.h"
 #include "transfer_service.h"
 #include "unit_conversion.h"
 #include "presentation_manager.h"
@@ -109,6 +110,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->laserPwrBox->setMaximum(settingsProvider->value(settings::dac::vRef).toDouble());
     ui->laserPwrBox->setSingleStep(laserPwrStep);
     //========================
+    QPixmap p = QPixmap::fromImage(QImage(":/icons/warning.png"));
+    ui->tempStatus->setPixmap(p.scaled(32, 32, Qt::KeepAspectRatio));
+    ui->tempStatus->setVisible(false);
 
     //===setting status bar===
     d->statusIcon = new QLabel(this);
@@ -274,6 +278,22 @@ MainWindow::MainWindow(QWidget *parent) :
         cmd.setType(dto::Command::digital_pot);
         cmd.addArgument(QVariant::fromValue(channel.data()));
         d->transferService->transferCommand(cmd);
+    });
+
+    connect(serviceRegistry->temperatureService(), &domain::TemperatureService::temperatureUpdated, this, [this](qreal temperature)
+    {
+        if (temperature>=settingsProvider->value(settings::temp_sensor::minTemp).toInt() &&
+                temperature<=settingsProvider->value(settings::temp_sensor::maxTemp).toInt())
+        {
+            ui->lcdTemp->setPalette(Qt::darkGreen);
+            ui->tempStatus->setVisible(false);
+        }
+        else
+        {
+            ui->lcdTemp->setPalette(Qt::darkRed);
+            ui->tempStatus->setVisible(true);
+        }
+        ui->lcdTemp->display(temperature);
     });
 
     connect(ui->measureButton, &QPushButton::clicked, this, &MainWindow::onMeasureClick);

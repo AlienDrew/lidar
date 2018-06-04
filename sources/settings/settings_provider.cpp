@@ -30,7 +30,11 @@ namespace
         {adc::maxVal, 4095},
         {adc::vRef, 3.3},
         {adc::samplingFreq, 500000},
-        {adc::maxNumberOfSamples, 1024},
+        {adc::maxNumberOfSamples, 800},
+
+        {temp_sensor::channelCount, 1},
+        {temp_sensor::minTemp, -10},
+        {temp_sensor::maxTemp, 50},
 
         //custom HID device
         {communication::usb::VID, 1155},

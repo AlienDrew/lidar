@@ -8,6 +8,7 @@ namespace domain
     class FreqGeneratorService;
     class DAConverterService;
     class DigitalPotentiometerService;
+    class TemperatureService;
     class TransferService;
 
     class ServiceRegistry
@@ -19,6 +20,7 @@ namespace domain
         FreqGeneratorService* freqGeneratorService();
         DAConverterService* daConverterService();
         DigitalPotentiometerService* digitalPotentiometerSerivce();
+        TemperatureService* temperatureService();
         TransferService* transferService();
     private:
         static ServiceRegistry* self;

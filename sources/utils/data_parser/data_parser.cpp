@@ -4,10 +4,10 @@
 #include "freq_generator_service.h"
 #include "da_converter_service.h"
 #include "digital_potentiometer_service.h"
+#include "temperature_service.h"
 #include "command.h"
 
 #include <QIODevice>
-#include <QDebug>
 
 using namespace utils;
 
@@ -35,7 +35,8 @@ void DataParser::parse(QByteArray data)
     switch (command)
     {
     case dto::Command::temp_sensor_received:
-        qDebug()<<"temp:"<<(((data[0]*256)+(data[1]&0xF0))/16)*0.0625<<"C"; //TODO: make a class in domain
+        //qDebug()<<"temp:"<<(((data[0]*256)+(data[1]&0xF0))/16)*0.0625<<"C";
+        serviceRegistry->temperatureService()->updateTemperature(0, (data[0]<<8)|(data[1]&0xFF));
         break;
     case dto::Command::telemetry_received:
 //        serviceRegistry->daConverterService()->updateDAC(0, data[1]);

@@ -12,7 +12,7 @@ namespace domain
     public:
         BasePeripheralService(int channelCount, QObject* parent = nullptr);
         dto::ChannelPtr load(int chId);
-        ~BasePeripheralService();
+        ~BasePeripheralService() override;
     signals:
         void chUpdated(dto::ChannelPtr channel);
 

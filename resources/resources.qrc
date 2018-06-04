@@ -8,5 +8,9 @@
         <file>icons/usb_disconnected.png</file>
         <file>icons/usb_disconnected_status.png</file>
         <file>icons/usb_connected_status.png</file>
+        <file>icons/save.png</file>
+        <file>icons/temperature.png</file>
+        <file>icons/laser_warning.png</file>
+        <file>icons/warning.png</file>
     </qresource>
 </RCC>

@@ -1,24 +1,27 @@
 #ifndef SERVICE_REGISTRY_H
 #define SERVICE_REGISTRY_H
 
-#include <QScopedPointer>
+#include <QObject>
 
 namespace domain
 {
     class FreqGeneratorService;
     class DAConverterService;
+    class DCDCSwitchService;
     class DigitalPotentiometerService;
     class TemperatureService;
     class TransferService;
 
-    class ServiceRegistry
+    class ServiceRegistry : public QObject
     {
+        Q_OBJECT
     public:
         ServiceRegistry();
         virtual ~ServiceRegistry();
         static ServiceRegistry* instance();
         FreqGeneratorService* freqGeneratorService();
         DAConverterService* daConverterService();
+        DCDCSwitchService* dcdcSwitchService();
         DigitalPotentiometerService* digitalPotentiometerSerivce();
         TemperatureService* temperatureService();
         TransferService* transferService();

@@ -20,6 +20,7 @@ class PresentationManager::Impl
 {
 public:
     MainWindow m_mainWindow;
+    StatusWindow m_statusWindow;
     SettingsWindow m_settingsWindow;
     AboutDialog m_aboutDialog;
     ChartWindow m_chartWindow;
@@ -35,6 +36,8 @@ PresentationManager::PresentationManager(QObject *parent) : QObject(parent),
 {
     PresentationManager::self = this;
 
+    d->m_statusWindow.setParent(&d->m_mainWindow);
+    d->m_statusWindow.setWindowFlags(Qt::Window | Qt::CustomizeWindowHint | Qt::WindowTitleHint);
     d->m_aboutDialog.setParent(&d->m_mainWindow);
     d->m_aboutDialog.setWindowFlag(Qt::Window);
     d->m_settingsWindow.setParent(&d->m_mainWindow);
@@ -42,6 +45,7 @@ PresentationManager::PresentationManager(QObject *parent) : QObject(parent),
     d->m_chartWindow.setParent(&d->m_mainWindow);
     d->m_chartWindow.setWindowFlag(Qt::Window);
     //d->m_chartWindow.show();
+    d->m_statusWindow.show();
 
     connect(d->m_mainWindow.actionMap()[presentation::settings], &QAction::triggered, [this]() {
         if (settingsWindow()->isHidden())
@@ -61,6 +65,11 @@ PresentationManager::~PresentationManager()
 presentation::MainWindow* PresentationManager::mainWindow() const
 {
     return &d->m_mainWindow;
+}
+
+StatusWindow*PresentationManager::statusWindow() const
+{
+    return &d->m_statusWindow;
 }
 
 presentation::SettingsWindow* PresentationManager::settingsWindow() const

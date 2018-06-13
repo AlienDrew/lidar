@@ -89,6 +89,9 @@ bool MCUEmulatorCommunication::write(QByteArray data)
         d->ADCTimer->setInterval(1);
         d->ADCTimer->start();
         break;
+    case dto::Command::usb_connected:
+        d->mcuEmulator->sendPeriphStatus();
+        break;
     default:
         break;
     }

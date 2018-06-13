@@ -78,6 +78,8 @@ bool TransferService::deviceOpened() const
 
 bool TransferService::transferCommand(const dto::Command& command)
 {
+    if (!d->usb->isOpened() && !d->emulator->isOpen())
+        return false;
     QByteArray data;
     QDataStream stream(&data, QIODevice::WriteOnly);
     stream.setVersion(QDataStream::Qt_5_10);
@@ -89,6 +91,7 @@ bool TransferService::transferCommand(const dto::Command& command)
             if (argument.isValid() && argument.canConvert<dto::Channel*>())
             {
                 stream<<(uint8_t)argument.value<dto::Channel*>()->channelId();
+                stream<<(uint8_t)argument.value<dto::Channel*>()->isOn();
                 uint32_t f = argument.value<dto::Channel*>()->value();
                 data.append(reinterpret_cast<const char*>(&f), sizeof(f)); //4 bytes
             }

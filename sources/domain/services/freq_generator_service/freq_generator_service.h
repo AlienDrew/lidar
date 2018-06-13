@@ -12,8 +12,8 @@ namespace domain
         explicit FreqGeneratorService(QObject* parent = nullptr);
         ~FreqGeneratorService() override;
 
-        void updateGenerator(int chId, quint32 freq);
-        void updateGenerator(dto::ChannelPtr generatorChannel);
+        void updateGenerator(int chId, quint32 freq, bool on, bool toMCU = true);
+        void updateGenerator(dto::ChannelPtr generatorChannel, bool toMCU = true);
 
     private:
         class Impl;

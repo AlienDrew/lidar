@@ -73,10 +73,10 @@ ChartWindow::ChartWindow(QWidget *parent) :
     d->chart = new QChart();
     d->chart2 = new QChart();
     d->chartView = new ChartView(d->chart, d->chart2);
-    d->chartView->setMinimumSize(1000, 400);
+    d->chartView->setMinimumSize(800, 250);
 
     d->chartView2 = new ChartView(d->chart2, d->chart);
-    d->chartView2->setMinimumSize(1000, 400);
+    d->chartView2->setMinimumSize(800, 250);
 
     d->axisX = new QValueAxis(this);
     d->axisX->setRange(0, settingsProvider->value(settings::adc::maxNumberOfSamples).toInt()/settingsProvider->value(settings::adc::samplingFreq).toReal()*1000000);

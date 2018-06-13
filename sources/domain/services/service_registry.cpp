@@ -5,9 +5,13 @@
 #include "presentation_manager.h"
 #include "freq_generator_service.h"
 #include "da_converter_service.h"
+#include "dcdc_switch_service.h"
 #include "digital_potentiometer_service.h"
 #include "temperature_service.h"
 #include "transfer_service.h"
+
+#include "command.h"
+#include "channel.h"
 
 using namespace domain;
 
@@ -19,6 +23,7 @@ public:
     TransferService transferService;
     FreqGeneratorService freqGenService;
     DAConverterService daConverterService;
+    DCDCSwitchService dcdcSwitchService;
     DigitalPotentiometerService digitalPotentiometerSerivce;
     TemperatureService temperatureSerive;
 };
@@ -26,6 +31,57 @@ public:
 ServiceRegistry::ServiceRegistry() : d(new Impl)
 {
     ServiceRegistry::self = this;
+
+    connect(&d->daConverterService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel, bool toMCU)
+    {
+        if (!toMCU)
+            return;
+        dto::Command cmd;
+        cmd.setType(dto::Command::dac);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        if (!d->transferService.transferCommand(cmd))
+        {
+            d->daConverterService.rollbackChannel();
+        }
+    });
+
+    connect(&d->dcdcSwitchService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel, bool toMCU)
+    {
+        if (!toMCU)
+            return;
+        dto::Command cmd;
+        cmd.setType(dto::Command::dcdc_switch);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        if (!d->transferService.transferCommand(cmd))
+        {
+            d->daConverterService.rollbackChannel();
+        }
+    });
+
+    connect(&d->freqGenService, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel, bool toMCU)
+    {
+        if (!toMCU)
+            return;
+        dto::Command cmd;
+        cmd.setType(dto::Command::gen);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        if (!d->transferService.transferCommand(cmd))
+        {
+            d->freqGenService.rollbackChannel();
+        }
+    });
+    connect(&d->digitalPotentiometerSerivce, &domain::BasePeripheralService::chUpdated, this, [this](dto::ChannelPtr channel, bool toMCU)
+    {
+        if (!toMCU)
+            return;
+        dto::Command cmd;
+        cmd.setType(dto::Command::digital_pot);
+        cmd.addArgument(QVariant::fromValue(channel.data()));
+        if(!d->transferService.transferCommand(cmd))
+        {
+            d->digitalPotentiometerSerivce.rollbackChannel();
+        }
+    });
 }
 
 ServiceRegistry* ServiceRegistry::instance()
@@ -46,6 +102,11 @@ FreqGeneratorService* ServiceRegistry::freqGeneratorService()
 DAConverterService* ServiceRegistry::daConverterService()
 {
     return &d->daConverterService;
+}
+
+DCDCSwitchService*ServiceRegistry::dcdcSwitchService()
+{
+    return &d->dcdcSwitchService;
 }
 
 DigitalPotentiometerService*ServiceRegistry::digitalPotentiometerSerivce()

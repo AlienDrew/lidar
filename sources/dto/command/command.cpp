@@ -26,3 +26,13 @@ void Command::addArgument(const QVariant& argument)
 {
     m_commandArguments.append(argument);
 }
+
+Command::CommandStatus Command::status() const
+{
+    return m_status;
+}
+
+void Command::setStatus(Command::CommandStatus status)
+{
+    m_status = status;
+}

@@ -35,6 +35,10 @@ namespace presentation
             update();
         }
         void setToggle(bool value);
+        bool isToggled() const
+        {
+            return m_switch;
+        }
 
     protected:
         void paintEvent(QPaintEvent*) override;

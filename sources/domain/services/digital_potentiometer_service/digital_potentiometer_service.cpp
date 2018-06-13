@@ -2,7 +2,6 @@
 
 #include "channel.h"
 #include "settings_provider.h"
-#include <QDebug>
 
 using namespace domain;
 
@@ -12,18 +11,16 @@ DigitalPotentiometerService::DigitalPotentiometerService(QObject* parent) :
 
 }
 
-void DigitalPotentiometerService::updatePotentiometer(int chId, quint32 value)
+void DigitalPotentiometerService::updatePotentiometer(int chId, quint32 value, bool isOn, bool toMCU)
 {
     if (chId<settingsProvider->value(settings::digital_potentiometer::channelCount).toInt() &&
             value<=settingsProvider->value(settings::digital_potentiometer::maxVal).toUInt())
-        BasePeripheralService::updateChannel(chId, value);
+        BasePeripheralService::updateChannel(chId, value, isOn, toMCU);
 }
 
-void DigitalPotentiometerService::updatePotentiometer(dto::ChannelPtr channel)
+void DigitalPotentiometerService::updatePotentiometer(dto::ChannelPtr channel, bool toMCU)
 {
-    if (channel->channelId()<settingsProvider->value(settings::digital_potentiometer::channelCount).toInt() &&
-            channel->value()<=settingsProvider->value(settings::digital_potentiometer::maxVal).toUInt())
-        BasePeripheralService::updateChannel(channel);
+    this->updateChannel(channel, toMCU);
 }
 
 DigitalPotentiometerService::~DigitalPotentiometerService()

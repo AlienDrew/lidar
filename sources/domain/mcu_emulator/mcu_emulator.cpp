@@ -115,3 +115,28 @@ void MCUEmulator::sendTemperature()
     //add temp data
     emit readyRead(data);
 }
+
+void MCUEmulator::sendPeriphStatus()
+{
+    //just random data
+    QByteArray data;
+    uint32_t genCh1 = 50000000;
+    uint32_t genCh2 = 50060000;
+    data[0] = dto::Command::periph_status;
+    data[1] = 1;
+    data[2] = 255; // dac 0
+    data[3] = 0; //positioned as ch0 switcher
+    data[4] = 1;
+    data[5] = 120; //dac 1
+
+    data[6] = 1; //digitalPot ch1 enabled
+    data[7] = 0; //digitalPot ch1 data
+    data[8] = 0; //digitalPot ch2 enabled
+    data[9] = 0; //digitalPot ch2 data
+
+    data[10] = 0;
+    data.append(reinterpret_cast<const char*>(&genCh1), sizeof(genCh1)); //4 bytes
+    data[15] = 0;
+    data.append(reinterpret_cast<const char*>(&genCh2), sizeof(genCh2)); //4 bytes
+    emit readyRead(data);
+}

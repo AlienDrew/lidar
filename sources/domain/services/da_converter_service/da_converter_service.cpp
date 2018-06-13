@@ -3,8 +3,6 @@
 #include "channel.h"
 #include "settings_provider.h"
 
-#include <QDebug>
-
 using namespace domain;
 
 class DAConverterService::Impl
@@ -18,17 +16,15 @@ DAConverterService::DAConverterService(QObject* parent) :
 
 }
 
-void DAConverterService::updateDAC(int chId, quint32 value)
+void DAConverterService::updateDAC(int chId, quint32 value, bool isOn, bool toMCU)
 {
-    qDebug()<<value;
     if (chId<settingsProvider->value(settings::dac::channelCount).toInt() && value<=settingsProvider->value(settings::dac::maxVal).toUInt())
-        BasePeripheralService::updateChannel(chId, value);
+        BasePeripheralService::updateChannel(chId, value, isOn, toMCU);
 }
 
-void DAConverterService::updateDAC(dto::ChannelPtr DACChannel)
+void DAConverterService::updateDAC(dto::ChannelPtr DACChannel, bool toMCU)
 {
-    if (DACChannel->channelId()<settingsProvider->value(settings::dac::channelCount).toInt() && DACChannel->value()<=settingsProvider->value(settings::dac::maxVal).toUInt())
-        BasePeripheralService::updateChannel(DACChannel->channelId(), DACChannel->value());
+    this->updateChannel(DACChannel, toMCU);
 }
 
 DAConverterService::~DAConverterService()

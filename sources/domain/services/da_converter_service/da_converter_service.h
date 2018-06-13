@@ -10,8 +10,8 @@ namespace domain
         Q_OBJECT
     public:
         explicit DAConverterService(QObject *parent = nullptr);
-        void updateDAC(int chId, quint32 value);
-        void updateDAC(dto::ChannelPtr DACChannel);
+        void updateDAC(int chId, quint32 value, bool isOn, bool toMCU = true);
+        void updateDAC(dto::ChannelPtr DACChannel, bool toMCU = true);
         ~DAConverterService() override;
 
     private:

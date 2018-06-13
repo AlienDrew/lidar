@@ -15,6 +15,7 @@ namespace domain
         void prepareADCData();
         void sendADCData();
         void sendTemperature();
+        void sendPeriphStatus();
     signals:
         void readyRead(QByteArray data);
         void finishedRead();

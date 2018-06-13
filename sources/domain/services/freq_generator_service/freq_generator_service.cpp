@@ -3,8 +3,6 @@
 #include "channel.h"
 #include "settings_provider.h"
 
-#include <QDebug>
-
 using namespace domain;
 
 class FreqGeneratorService::Impl
@@ -23,15 +21,17 @@ FreqGeneratorService::~FreqGeneratorService()
 
 }
 
-void FreqGeneratorService::updateGenerator(int chId, quint32 freq)
+void FreqGeneratorService::updateGenerator(int chId, quint32 freq, bool on, bool toMCU)
 {
-    if (chId<settingsProvider->value(settings::freq_generator::channelCount).toInt() && freq<=settingsProvider->value(settings::freq_generator::maxFrequency).toUInt())
-        BasePeripheralService::updateChannel(chId, freq);
+    if (chId>=0 && chId<settingsProvider->value(settings::freq_generator::channelCount).toInt() &&
+            freq<=settingsProvider->value(settings::freq_generator::maxFrequency).toUInt())
+    {
+        BasePeripheralService::updateChannel(chId, freq, on, toMCU);
+    }
 }
 
 
-void FreqGeneratorService::updateGenerator(dto::ChannelPtr generatorChannel)
+void FreqGeneratorService::updateGenerator(dto::ChannelPtr generatorChannel, bool toMCU)
 {
-    if (generatorChannel->channelId()<settingsProvider->value(settings::freq_generator::channelCount).toInt() && generatorChannel->value()<=settingsProvider->value(settings::freq_generator::maxFrequency).toUInt())
-        BasePeripheralService::updateChannel(generatorChannel);
+    this->updateChannel(generatorChannel, toMCU);
 }

@@ -4,6 +4,7 @@
 #include <QObject>
 
 #include "main_window.h"
+#include "status_window.h"
 #include "settings_window.h"
 #include "about_dialog.h"
 #include "chart_window.h"
@@ -18,10 +19,11 @@ namespace presentation
         PresentationManager(QObject *parent = nullptr);
         ~PresentationManager() override;
 
-        presentation::MainWindow* mainWindow() const;
-        presentation::SettingsWindow* settingsWindow() const;
-        presentation::AboutDialog* aboutDialog() const;
-        presentation::ChartWindow* chartWindow() const;
+        MainWindow* mainWindow() const;
+        StatusWindow* statusWindow() const;
+        SettingsWindow* settingsWindow() const;
+        AboutDialog* aboutDialog() const;
+        ChartWindow* chartWindow() const;
 
     private:
         static PresentationManager* self;

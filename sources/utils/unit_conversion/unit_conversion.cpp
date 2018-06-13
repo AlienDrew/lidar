@@ -47,14 +47,38 @@ qreal UnitConversion::frequencyConvert(qreal freq, dto::Channel::FrequencyUnits 
     return freq *= frequency::conversionMap.value(to).value(from);
 }
 
-int UnitConversion::voltsToDAC(qreal volts)
+quint32 UnitConversion::voltsToDAC(qreal volts)
 {
-    if (volts==settingsProvider->value(settings::dac::vRef).toReal())
+    if (volts>=settingsProvider->value(settings::dac::vRef).toReal())
         return 255;
     return qRound(volts*settingsProvider->value(settings::dac::maxVal).toInt()/settingsProvider->value(settings::dac::vRef).toReal());
 }
 
-int UnitConversion::kToDAC(int k)
+qreal UnitConversion::DACToVolts(quint32 dac)
+{
+    if (dac>settingsProvider->value(settings::dac::maxVal).toUInt())
+        return 3.3;
+    return settingsProvider->value(settings::dac::vRef).toReal()/settingsProvider->value(settings::dac::maxVal).toReal()*dac;
+}
+
+qreal UnitConversion::DACToBiasVolts(quint32 dac)
+{
+    //yeey magic numbers ^_^
+    return ( -20.4115*DACToVolts(dac) )+110.924;
+}
+
+quint32 UnitConversion::BiasVoltsToDAC(qreal biasVolts)
+{
+    //yeey magic numbers ^_^
+    return voltsToDAC((biasVolts-110.924)/(-20.4115));
+}
+
+quint32 UnitConversion::kToDAC(int k)
 {
     return qRound(2.56*k-5.632);
+}
+
+int UnitConversion::DACToK(quint32 dac)
+{
+    return qRound((dac+5.632)/2.56);
 }

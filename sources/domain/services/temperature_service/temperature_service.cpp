@@ -31,5 +31,5 @@ TemperatureService::~TemperatureService()
 void TemperatureService::updateTemperature(int chId, quint32 temperature)
 {
     if (chId<settingsProvider->value(settings::temp_sensor::channelCount).toInt())
-        BasePeripheralService::updateChannel(chId, temperature);
+        BasePeripheralService::updateChannel(chId, temperature, true, false);
 }

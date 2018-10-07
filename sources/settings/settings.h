@@ -28,10 +28,12 @@ namespace settings
     }
     namespace adc
     {
+        const QString channelCount = "ADC/channel_count";
         const QString maxVal = "ADC/max_val";
         const QString vRef = "ADC/v_ref";
         const QString samplingFreq = "ADC/sampling_freq";
         const QString maxNumberOfSamples = "ADC/max_num_of_samples";
+        const QString signalFreq = "ADC/signal_freq";
     }
     namespace temp_sensor
     {

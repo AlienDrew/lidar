@@ -11,6 +11,7 @@ namespace domain
     class DigitalPotentiometerService;
     class TemperatureService;
     class TransferService;
+    class ADCService;
 
     class ServiceRegistry : public QObject
     {
@@ -25,6 +26,7 @@ namespace domain
         DigitalPotentiometerService* digitalPotentiometerSerivce();
         TemperatureService* temperatureService();
         TransferService* transferService();
+        domain::ADCService* adcService();
     private:
         static ServiceRegistry* self;
 

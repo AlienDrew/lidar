@@ -1,9 +1,13 @@
 #include "unit_conversion.h"
 
 #include "settings_provider.h"
+#include "service_registry.h"
 
 #include <QMap>
 #include <QtMath>
+
+#define PHASE_MULT 10
+#define MAX_ANGLE 360
 
 using namespace utils;
 
@@ -81,4 +85,34 @@ quint32 UnitConversion::kToDAC(int k)
 int UnitConversion::DACToK(quint32 dac)
 {
     return qRound((dac+5.632)/2.56);
+}
+
+qreal UnitConversion::complexToPhase(qreal real, qreal imag)
+{
+    qreal phase = qAtan2(imag, real);
+    phase = phase*(qreal)(PHASE_MULT*MAX_ANGLE/2)/M_PI;
+    return phase;
+}
+
+qreal UnitConversion::complexToAmplitude(qreal real, qreal imag)
+{
+    qreal ampitude = imag*imag+real*real;
+    return qSqrt(ampitude);
+}
+
+qreal UnitConversion::phaseToDistance(qreal phase)
+{
+//    int c = 299792458;
+//    int distMult = 32;
+//    int wavelength = c/50060000*distMult;
+//    qreal result;
+//    if (phase<180*PHASE_MULT)
+//     result = wavelength * 0 + ((int32_t)phase * wavelength) / (MAX_ANGLE * PHASE_MULT);
+//    else
+//        result = wavelength * -1 + ((int32_t)phase * wavelength) / (MAX_ANGLE * PHASE_MULT);
+//    result = result/(distMult*2)+2;
+    //interpolation
+    qreal distance = (-8.31362*phase/PHASE_MULT)+3934.3406;
+
+    return distance;
 }

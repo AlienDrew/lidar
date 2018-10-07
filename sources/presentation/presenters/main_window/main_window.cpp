@@ -15,6 +15,7 @@
 #include "generator.h"
 #include "photodetector.h"
 #include "laser.h"
+#include "measurements.h"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -29,6 +30,7 @@ public:
     domain::Generator* generator;
     domain::Photodetector* photodetector;
     domain::Laser* laser;
+    domain::Measurements* measurments;
 
     QMap< QString, QAction* > actionMap;
     //==generator==
@@ -81,6 +83,7 @@ MainWindow::MainWindow(QWidget *parent) :
     d->generator = new domain::Generator(this);
     d->photodetector = new domain::Photodetector(this);
     d->laser = new domain::Laser(this);
+    d->measurments = new domain::Measurements(this);
 
     //===setting ranges/steps for fields===
     //ui->ch1Box->setMinimum(settingsProvider->value(settings::freq_generator::minFrequency).toInt());
@@ -284,6 +287,14 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->tempStatus->setVisible(true);
         }
         ui->lcdTemp->display(temperature);
+    });
+    connect(d->measurments, &domain::Measurements::phaseUpdated, this, [this](qreal phase)
+    {
+        ui->lcdPhaseDiff->display(phase);
+    });
+    connect(d->measurments, &domain::Measurements::distanceUpdated, this, [this](qreal distance)
+    {
+        ui->lcdDistance->display(distance);
     });
 
     connect(ui->measureButton, &QPushButton::clicked, this, &MainWindow::onMeasureClick);

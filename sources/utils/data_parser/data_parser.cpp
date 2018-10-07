@@ -6,6 +6,7 @@
 #include "dcdc_switch_service.h"
 #include "digital_potentiometer_service.h"
 #include "temperature_service.h"
+#include "adc_service.h"
 #include "command.h"
 
 #include <QIODevice>
@@ -26,6 +27,14 @@ namespace
         uint32_t converted = 0;
         converted = (buffer[index]&0xFF) | (buffer[index+1]<<8 & 0xFFFF)|(buffer[index+2]<<16 & 0xFFFFFF)|(buffer[index+3]<<24 & 0xFFFFFFFF);
         return converted;
+    }
+    uint16_t convertFrom8To16(uint8_t dataFirst, uint8_t dataSecond)
+    {
+        uint16_t dataBoth = 0x0000;
+        dataBoth = dataFirst;
+        dataBoth = dataBoth << 8;
+        dataBoth |= dataSecond;
+        return dataBoth;
     }
 }
 
@@ -71,6 +80,7 @@ void DataParser::parse(QByteArray data)
         break;
     case dto::Command::adc_data:
         data.remove(60, 3);
+        serviceRegistry->adcService()->updateADCChannel(data);
         if (d->xyseriesDevice)
         {
             if (d->xyseriesDevice->isOpen())

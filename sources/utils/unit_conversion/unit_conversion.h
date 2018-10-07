@@ -24,6 +24,10 @@ namespace utils
         static quint32 BiasVoltsToDAC(qreal biasVolts);
         static quint32 kToDAC(int k);
         static int DACToK(quint32 dac);
+
+        static qreal complexToPhase(qreal real, qreal imag);
+        static qreal complexToAmplitude(qreal real, qreal imag);
+        static qreal phaseToDistance(qreal phase);
     };
 }
 

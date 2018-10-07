@@ -8,6 +8,7 @@
 #include "dcdc_switch_service.h"
 #include "digital_potentiometer_service.h"
 #include "temperature_service.h"
+#include "adc_service.h"
 #include "transfer_service.h"
 
 #include "command.h"
@@ -26,6 +27,7 @@ public:
     DCDCSwitchService dcdcSwitchService;
     DigitalPotentiometerService digitalPotentiometerSerivce;
     TemperatureService temperatureSerive;
+    ADCService adcService;
 };
 
 ServiceRegistry::ServiceRegistry() : d(new Impl)
@@ -109,12 +111,12 @@ DCDCSwitchService*ServiceRegistry::dcdcSwitchService()
     return &d->dcdcSwitchService;
 }
 
-DigitalPotentiometerService*ServiceRegistry::digitalPotentiometerSerivce()
+DigitalPotentiometerService* ServiceRegistry::digitalPotentiometerSerivce()
 {
     return &d->digitalPotentiometerSerivce;
 }
 
-TemperatureService*ServiceRegistry::temperatureService()
+TemperatureService* ServiceRegistry::temperatureService()
 {
     return &d->temperatureSerive;
 }
@@ -122,4 +124,9 @@ TemperatureService*ServiceRegistry::temperatureService()
 TransferService* ServiceRegistry::transferService()
 {
     return &d->transferService;
+}
+
+ADCService* ServiceRegistry::adcService()
+{
+    return &d->adcService;
 }

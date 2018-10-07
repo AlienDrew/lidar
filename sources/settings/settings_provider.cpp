@@ -27,10 +27,12 @@ namespace
         {digital_potentiometer::maxK, 100},
 
         //internal stm32 adc used
+        {adc::channelCount, 2},
         {adc::maxVal, 4095},
         {adc::vRef, 3.3},
         {adc::samplingFreq, 500000},
         {adc::maxNumberOfSamples, 800},
+        {adc::signalFreq, 60000},
 
         {temp_sensor::channelCount, 1},
         {temp_sensor::minTemp, -10},
